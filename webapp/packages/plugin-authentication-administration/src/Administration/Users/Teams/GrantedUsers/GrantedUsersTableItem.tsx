@@ -10,7 +10,7 @@ import { observer } from 'mobx-react-lite';
 import { USER_TEAM_ROLE_SUPERVISOR } from '@cloudbeaver/core-authentication';
 import { Checkbox, StaticImage, TableColumnValue, TableItem, TableItemSelect, useTranslate } from '@cloudbeaver/core-blocks';
 
-import classes from './GrantedUsersTableItem.m.css';
+import classes from './GrantedUsersTableItem.module.css';
 
 interface Props {
   id: any;
@@ -45,11 +45,11 @@ export const GrantedUsersTableItem = observer<Props>(function GrantedUsersTableI
         <TableItemSelect disabled={disabled} />
       </TableColumnValue>
       <TableColumnValue>
-        <StaticImage className={classes.staticImage} icon={icon} title={iconTooltip} />
+        <StaticImage className={classes['staticImage']} icon={icon} title={iconTooltip} />
       </TableColumnValue>
       <TableColumnValue>{name}</TableColumnValue>
       {teamRoles.length > 0 && (
-        <TableColumnValue title={translate('plugin_authentication_administration_team_user_team_role_supervisor_description')}>
+        <TableColumnValue title={translate('plugin_authentication_administration_team_user_team_role_supervisor_description')} centerContent flex>
           <Checkbox
             checked={teamRole === USER_TEAM_ROLE_SUPERVISOR}
             onChange={value => onTeamRoleAssign(id, value ? USER_TEAM_ROLE_SUPERVISOR : null)}

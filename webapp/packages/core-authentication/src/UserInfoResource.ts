@@ -8,15 +8,22 @@
 import { computed, makeObservable, runInAction } from 'mobx';
 
 import { injectable } from '@cloudbeaver/core-di';
-import { AutoRunningTask, ISyncExecutor, ITask, SyncExecutor, whileTask } from '@cloudbeaver/core-executor';
+import { AutoRunningTask, type ISyncExecutor, type ITask, SyncExecutor, whileTask } from '@cloudbeaver/core-executor';
 import { CachedDataResource, type ResourceKeySimple, ResourceKeyUtils } from '@cloudbeaver/core-resource';
-import { SessionDataResource, SessionResource } from '@cloudbeaver/core-root';
-import { AuthInfo, AuthLogoutQuery, AuthStatus, GetActiveUserQueryVariables, GraphQLService, UserInfo } from '@cloudbeaver/core-sdk';
+import { SessionResource } from '@cloudbeaver/core-root';
+import {
+  type AuthInfo,
+  type AuthLogoutQuery,
+  AuthStatus,
+  type GetActiveUserQueryVariables,
+  GraphQLService,
+  type UserInfo,
+} from '@cloudbeaver/core-sdk';
 
-import { AUTH_PROVIDER_LOCAL_ID } from './AUTH_PROVIDER_LOCAL_ID';
-import { AuthProviderService } from './AuthProviderService';
-import type { ELMRole } from './ELMRole';
-import type { IAuthCredentials } from './IAuthCredentials';
+import { AUTH_PROVIDER_LOCAL_ID } from './AUTH_PROVIDER_LOCAL_ID.js';
+import { AuthProviderService } from './AuthProviderService.js';
+import type { ELMRole } from './ELMRole.js';
+import type { IAuthCredentials } from './IAuthCredentials.js';
 
 export type UserInfoIncludes = GetActiveUserQueryVariables;
 
@@ -51,10 +58,9 @@ export class UserInfoResource extends CachedDataResource<UserInfo | null, void, 
   constructor(
     private readonly graphQLService: GraphQLService,
     private readonly authProviderService: AuthProviderService,
-    sessionResource: SessionResource,
-    private readonly sessionDataResource: SessionDataResource,
+    private readonly sessionResource: SessionResource,
   ) {
-    super(() => null, undefined, ['customIncludeOriginDetails', 'includeConfigurationParameters']);
+    super(() => null, undefined, ['includeConfigurationParameters']);
 
     this.onUserChange = new SyncExecutor();
     this.onException = new SyncExecutor();
@@ -68,6 +74,18 @@ export class UserInfoResource extends CachedDataResource<UserInfo | null, void, 
     makeObservable(this, {
       parametersAvailable: computed,
     });
+  }
+
+  isAnonymous(): this is { data: UserInfo } {
+    return this.data?.isAnonymous === true;
+  }
+
+  isAuthenticated(): this is { data: UserInfo } {
+    return !!this.data && !this.isAnonymous();
+  }
+
+  hasAccess(): this is { data: UserInfo } {
+    return this.isAnonymous() || this.isAuthenticated();
   }
 
   isLinked(provideId: string): boolean {
@@ -104,14 +122,13 @@ export class UserInfoResource extends CachedDataResource<UserInfo | null, void, 
       configuration: configurationId,
       credentials: processedCredentials,
       linkUser,
-      customIncludeOriginDetails: true,
       forceSessionsLogout,
     });
 
     if (authInfo.userTokens && authInfo.authStatus === AuthStatus.Success) {
       this.resetIncludes();
       this.setData(await this.loader());
-      this.sessionDataResource.markOutdated();
+      this.sessionResource.markOutdated();
     }
 
     return authInfo as AuthInfo;
@@ -136,11 +153,12 @@ export class UserInfoResource extends CachedDataResource<UserInfo | null, void, 
             const { authInfo } = await this.graphQLService.sdk.getAuthStatus({
               authId,
               linkUser,
-              customIncludeOriginDetails: true,
             });
             return authInfo as AuthInfo;
           },
           1000,
+          undefined,
+          5 * 60 * 1000,
         );
 
         const authInfo = await activeTask;
@@ -148,7 +166,7 @@ export class UserInfoResource extends CachedDataResource<UserInfo | null, void, 
         if (authInfo.userTokens && authInfo.authStatus === AuthStatus.Success) {
           this.resetIncludes();
           this.setData(await this.loader());
-          this.sessionDataResource.markOutdated();
+          this.sessionResource.markOutdated();
         }
 
         return this.data;
@@ -167,7 +185,7 @@ export class UserInfoResource extends CachedDataResource<UserInfo | null, void, 
 
     this.resetIncludes();
     this.setData(await this.loader());
-    this.sessionDataResource.markOutdated();
+    this.sessionResource.markOutdated();
 
     return result;
   }
@@ -268,7 +286,7 @@ export class UserInfoResource extends CachedDataResource<UserInfo | null, void, 
     }
   }
 
-  protected setData(data: UserInfo | null): void {
+  protected override setData(data: UserInfo | null): void {
     const prevUserId = this.getId();
     super.setData(data);
     const currentUserId = this.getId();
@@ -280,9 +298,7 @@ export class UserInfoResource extends CachedDataResource<UserInfo | null, void, 
 
   private getDefaultIncludes(): UserInfoIncludes {
     return {
-      customIncludeOriginDetails: true,
       includeConfigurationParameters: false,
-      includeMetaParameters: false,
     };
   }
 }

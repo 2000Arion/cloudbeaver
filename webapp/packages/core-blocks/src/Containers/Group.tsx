@@ -7,13 +7,13 @@
  */
 import { forwardRef } from 'react';
 
-import { s } from '../s';
-import { useS } from '../useS';
-import containerStyles from './Container.m.css';
-import { filterContainerFakeProps, getContainerProps } from './filterContainerFakeProps';
-import style from './Group.m.css';
-import type { IContainerProps } from './IContainerProps';
-import elementsSizeStyles from './shared/ElementsSize.m.css';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import containerStyles from './Container.module.css';
+import { filterContainerFakeProps, getContainerProps } from './filterContainerFakeProps.js';
+import style from './Group.module.css';
+import type { IContainerProps } from './IContainerProps.js';
+import elementsSizeStyles from './shared/ElementsSize.module.css';
 
 interface Props extends IContainerProps {
   form?: boolean;

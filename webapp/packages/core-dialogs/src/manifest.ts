@@ -12,8 +12,5 @@ export const coreDialogsManifest: PluginManifest = {
     name: 'Core Dialogs',
   },
 
-  providers: [
-    () => import('./CommonDialog/CommonDialogService').then(m => m.CommonDialogService),
-    () => import('./Menu/ContextMenu/ContextMenuService').then(m => m.ContextMenuService),
-  ],
+  providers: [() => import('./CommonDialog/CommonDialogService.js').then(m => m.CommonDialogService)],
 };

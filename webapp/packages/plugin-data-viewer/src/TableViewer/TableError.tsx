@@ -13,8 +13,8 @@ import { Button, IconOrImage, s, useErrorDetails, useObservableRef, useS, useSta
 import { ServerErrorType, ServerInternalError } from '@cloudbeaver/core-sdk';
 import { errorOf } from '@cloudbeaver/core-utils';
 
-import type { IDatabaseDataModel } from '../DatabaseDataModel/IDatabaseDataModel';
-import styles from './TableError.m.css';
+import type { IDatabaseDataModel } from '../DatabaseDataModel/IDatabaseDataModel.js';
+import styles from './TableError.module.css';
 
 interface Props {
   model: IDatabaseDataModel;

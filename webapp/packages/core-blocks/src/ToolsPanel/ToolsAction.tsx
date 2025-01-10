@@ -7,12 +7,12 @@
  */
 import { type ButtonHTMLAttributes, useState } from 'react';
 
-import { IconOrImage } from '../IconOrImage';
-import { Loader } from '../Loader/Loader';
-import { s } from '../s';
-import { useS } from '../useS';
-import { useStateDelay } from '../useStateDelay';
-import style from './ToolsAction.m.css';
+import { IconOrImage } from '../IconOrImage.js';
+import { Loader } from '../Loader/Loader.js';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import { useStateDelay } from '../useStateDelay.js';
+import style from './ToolsAction.module.css';
 
 interface Props extends Omit<ButtonHTMLAttributes<any>, 'onClick'> {
   icon?: string;

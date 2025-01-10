@@ -26,7 +26,7 @@ dist/
 
 *.iml
 /idea/
-.idea/
+
 
 ## Mac OS
 .DS_Store
@@ -39,6 +39,9 @@ server/test/io.cloudbeaver.test.platform/workspace/.data/
 .project
 .classpath
 .settings/
+
+## Eclipse PDE
+*.product.launch
 
 workspace-dev-ce/
 deploy/cloudbeaver

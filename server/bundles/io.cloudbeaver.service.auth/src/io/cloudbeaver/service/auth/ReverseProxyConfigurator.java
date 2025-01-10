@@ -17,9 +17,10 @@
 package io.cloudbeaver.service.auth;
 
 import io.cloudbeaver.auth.provider.rp.RPAuthProvider;
-import io.cloudbeaver.model.app.WebAppConfiguration;
-import io.cloudbeaver.model.app.WebApplication;
-import io.cloudbeaver.model.app.WebAuthApplication;
+import io.cloudbeaver.model.app.ServletAppConfiguration;
+import io.cloudbeaver.model.app.ServletApplication;
+import io.cloudbeaver.model.app.ServletAuthApplication;
+import io.cloudbeaver.model.app.ServletServerConfiguration;
 import io.cloudbeaver.model.session.WebSession;
 import io.cloudbeaver.service.DBWServiceServerConfigurator;
 import org.jkiss.code.NotNull;
@@ -36,14 +37,15 @@ public class ReverseProxyConfigurator implements DBWServiceServerConfigurator {
 
     @Override
     public void configureServer(
-        @NotNull WebApplication application,
+        @NotNull ServletApplication application,
         @Nullable WebSession session,
-        @NotNull WebAppConfiguration appConfig
+        @NotNull ServletServerConfiguration serverConfiguration,
+        @NotNull ServletAppConfiguration appConfig
     ) throws DBException {
     }
 
     @Override
-    public void migrateConfigurationIfNeeded(@NotNull WebApplication application) throws DBException {
+    public void migrateConfigurationIfNeeded(@NotNull ServletApplication application) throws DBException {
         if (migrationNotNeeded(application)) {
             return;
         }
@@ -51,14 +53,14 @@ public class ReverseProxyConfigurator implements DBWServiceServerConfigurator {
     }
 
     @Override
-    public void reloadConfiguration(@NotNull WebAppConfiguration appConfig) throws DBException {
+    public void reloadConfiguration(@NotNull ServletAppConfiguration appConfig) throws DBException {
 
     }
 
     private void migrateConfiguration(
-        @NotNull WebApplication application
+        @NotNull ServletApplication application
     ) {
-        if (!(application instanceof WebAuthApplication authApplication)) {
+        if (!(application instanceof ServletAuthApplication authApplication)) {
             return;
         }
 
@@ -69,7 +71,7 @@ public class ReverseProxyConfigurator implements DBWServiceServerConfigurator {
             smReverseProxyProviderConfiguration.setProvider(RPAuthProvider.AUTH_PROVIDER);
             smReverseProxyProviderConfiguration.setDisplayName("Reverse Proxy");
             smReverseProxyProviderConfiguration.setDescription(
-                "Automatically created provider after changing Reverse Proxy configuration way in 23.3.4 version"
+                "This provider was created automatically"
             );
             smReverseProxyProviderConfiguration .setIconURL("");
             Map<String, Object> parameters = new HashMap<>();
@@ -77,6 +79,7 @@ public class ReverseProxyConfigurator implements DBWServiceServerConfigurator {
             parameters.put(RPConstants.PARAM_TEAM, RPAuthProvider.X_TEAM);
             parameters.put(RPConstants.PARAM_FIRST_NAME, RPAuthProvider.X_FIRST_NAME);
             parameters.put(RPConstants.PARAM_LAST_NAME, RPAuthProvider.X_LAST_NAME);
+            parameters.put(RPConstants.PARAM_FULL_NAME, RPAuthProvider.X_FULL_NAME);
             smReverseProxyProviderConfiguration.setParameters(parameters);
             authApplication.getAuthConfiguration().addAuthProviderConfiguration(smReverseProxyProviderConfiguration );
             try {
@@ -87,8 +90,8 @@ public class ReverseProxyConfigurator implements DBWServiceServerConfigurator {
         }
     }
 
-    private boolean migrationNotNeeded(@NotNull WebApplication application) {
-        if (!(application instanceof WebAuthApplication authApplication)) {
+    private boolean migrationNotNeeded(@NotNull ServletApplication application) {
+        if (!(application instanceof ServletAuthApplication authApplication)) {
             return true;
         }
 

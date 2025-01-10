@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
  */
-import { s } from '../s';
-import { useS } from '../useS';
-import style from './ItemList.m.css';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import style from './ItemList.module.css';
 
 interface Props {
   className?: string;

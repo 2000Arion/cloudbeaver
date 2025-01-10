@@ -46,6 +46,9 @@
       "path": "../core-executor/tsconfig.json"
     },
     {
+      "path": "../core-links/tsconfig.json"
+    },
+    {
       "path": "../core-localization/tsconfig.json"
     },
     {
@@ -89,6 +92,9 @@
     },
     {
       "path": "../core-storage/tsconfig.json"
+    },
+    {
+      "path": "../core-task-manager/tsconfig.json"
     },
     {
       "path": "../core-theming/tsconfig.json"

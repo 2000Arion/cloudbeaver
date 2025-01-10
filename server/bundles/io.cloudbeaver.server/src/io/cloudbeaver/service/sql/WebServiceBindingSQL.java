@@ -19,8 +19,8 @@ package io.cloudbeaver.service.sql;
 import graphql.schema.DataFetchingEnvironment;
 import io.cloudbeaver.DBWebException;
 import io.cloudbeaver.model.WebConnectionInfo;
+import io.cloudbeaver.model.app.ServletApplication;
 import io.cloudbeaver.model.session.WebSession;
-import io.cloudbeaver.server.CBApplication;
 import io.cloudbeaver.service.DBWBindingContext;
 import io.cloudbeaver.service.DBWServiceBindingServlet;
 import io.cloudbeaver.service.DBWServletContext;
@@ -39,7 +39,8 @@ import java.util.stream.Collectors;
 /**
  * Web service implementation
  */
-public class WebServiceBindingSQL extends WebServiceBindingBase<DBWServiceSQL> implements DBWServiceBindingServlet<CBApplication> {
+public class WebServiceBindingSQL extends WebServiceBindingBase<DBWServiceSQL>
+    implements DBWServiceBindingServlet<ServletApplication> {
 
     public WebServiceBindingSQL() {
         super(DBWServiceSQL.class, new WebServiceSQL(), "schema/service.sql.graphqls");
@@ -149,6 +150,12 @@ public class WebServiceBindingSQL extends WebServiceBindingBase<DBWServiceSQL> i
                     env.getArgument("resultsId"),
                     env.getArgument("columnIndex"),
                     new WebSQLResultsRow(env.getArgument("row"))))
+            .dataFetcher("sqlGetDynamicTrace", env ->
+                getService(env).readDynamicTrace(
+                    getWebSession(env),
+                    getSQLContext(env),
+                    env.getArgument("resultsId")
+                ))
             .dataFetcher("updateResultsDataBatch", env ->
                 getService(env).updateResultsDataBatch(
                     getSQLContext(env),
@@ -288,7 +295,7 @@ public class WebServiceBindingSQL extends WebServiceBindingBase<DBWServiceSQL> i
     }
 
     @Override
-    public void addServlets(CBApplication application, DBWServletContext servletContext) throws DBException {
+    public void addServlets(ServletApplication application, DBWServletContext servletContext) throws DBException {
         servletContext.addServlet(
             "sqlResultValueViewer",
             new WebSQLResultServlet(application, getServiceImpl()),
@@ -299,6 +306,11 @@ public class WebServiceBindingSQL extends WebServiceBindingBase<DBWServiceSQL> i
             new WebSQLFileLoaderServlet(application),
             application.getServicesURI() + "resultset/blob/*"
         );
+    }
+
+    @Override
+    public boolean isApplicable(ServletApplication application) {
+        return application.isMultiuser();
     }
 
     private static class WebSQLConfiguration {

@@ -93,8 +93,9 @@ module.exports = (env, argv) => {
         options: {
           esModule: true,
           modules: {
-            auto: /(module|m)\.(css|s[ac]ss)$/,
+            auto: /module\.(css|s[ac]ss)$/,
             localIdentName: '[local]___[hash:base64:5]',
+            namedExport: false,
           },
         },
       },
@@ -159,6 +160,11 @@ module.exports = (env, argv) => {
       removeAvailableModules: false,
       removeEmptyChunks: false,
       splitChunks: {
+        /*  this impacts how many chunks are created,
+            we need to keep less then 30 requests for js files for initial page load (with no editors)
+            we can reduce this number when we will split chunks properly
+        */
+        minSize: 128 * 1024,
         cacheGroups: {
           styles: {
             name: 'styles',
@@ -289,7 +295,17 @@ module.exports = (env, argv) => {
         devMode && {
           test: /\.jsx?$/,
           exclude: /node_modules/,
-          use: ['thread-loader', 'swc-loader'],
+          use: [
+            'thread-loader',
+            {
+              loader: 'swc-loader',
+              options: {
+                jsc: {
+                  target: 'esnext',
+                },
+              },
+            },
+          ],
         },
         {
           test: /\.(css|s[ac]ss)$/,
@@ -310,7 +326,7 @@ module.exports = (env, argv) => {
       ],
     },
     ignoreWarnings: [/Failed to parse source map/],
-    devtool: devMode ? 'source-map' : false,
+    devtool: devMode ? 'eval-source-map' : false,
     plugins: [
       new webpack.WatchIgnorePlugin({
         paths: [/.tsbuildinfo$/],

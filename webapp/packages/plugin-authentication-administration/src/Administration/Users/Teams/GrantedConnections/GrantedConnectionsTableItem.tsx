@@ -9,7 +9,7 @@ import { observer } from 'mobx-react-lite';
 
 import { StaticImage, TableColumnValue, TableItem, TableItemSelect } from '@cloudbeaver/core-blocks';
 
-import style from './GrantedConnectionsTableItem.m.css';
+import style from './GrantedConnectionsTableItem.module.css';
 
 interface Props {
   id: any;
@@ -38,7 +38,7 @@ export const GrantedConnectionsTableItem = observer<Props>(function GrantedConne
         <TableItemSelect disabled={disabled} />
       </TableColumnValue>
       <TableColumnValue flex centerContent>
-        {icon && <StaticImage className={style.staticImage} icon={icon} title={iconTooltip} />}
+        {icon && <StaticImage className={style['staticImage']} icon={icon} title={iconTooltip} />}
       </TableColumnValue>
       <TableColumnValue title={name} ellipsis>
         {name}

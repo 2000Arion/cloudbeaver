@@ -8,24 +8,24 @@
 import { computed, makeObservable, observable } from 'mobx';
 
 import type { ConnectionExecutionContextService, IConnectionExecutionContext, IConnectionExecutionContextInfo } from '@cloudbeaver/core-connections';
-import type { IServiceInjector } from '@cloudbeaver/core-di';
+import type { IServiceProvider } from '@cloudbeaver/core-di';
 import type { ITask } from '@cloudbeaver/core-executor';
+import type { AsyncTask, AsyncTaskInfoService } from '@cloudbeaver/core-root';
 import {
-  AsyncTaskInfoService,
   GraphQLService,
   ResultDataFormat,
-  SqlExecuteInfo,
-  SqlQueryResults,
-  UpdateResultsDataBatchMutationVariables,
+  type SqlExecuteInfo,
+  type SqlQueryResults,
+  type UpdateResultsDataBatchMutationVariables,
 } from '@cloudbeaver/core-sdk';
 import { uuid } from '@cloudbeaver/core-utils';
 
-import { DocumentEditAction } from './DatabaseDataModel/Actions/Document/DocumentEditAction';
-import type { IResultSetBlobValue } from './DatabaseDataModel/Actions/ResultSet/IResultSetBlobValue';
-import { ResultSetEditAction } from './DatabaseDataModel/Actions/ResultSet/ResultSetEditAction';
-import type { IDatabaseDataOptions } from './DatabaseDataModel/IDatabaseDataOptions';
-import type { IDatabaseResultSet } from './DatabaseDataModel/IDatabaseResultSet';
-import { ResultSetDataSource } from './ResultSetDataSource';
+import { DocumentEditAction } from './DatabaseDataModel/Actions/Document/DocumentEditAction.js';
+import type { IResultSetBlobValue } from './DatabaseDataModel/Actions/ResultSet/IResultSetBlobValue.js';
+import { ResultSetEditAction } from './DatabaseDataModel/Actions/ResultSet/ResultSetEditAction.js';
+import type { IDatabaseDataOptions } from './DatabaseDataModel/IDatabaseDataOptions.js';
+import type { IDatabaseResultSet } from './DatabaseDataModel/IDatabaseResultSet.js';
+import { ResultSetDataSource } from './ResultSet/ResultSetDataSource.js';
 
 export interface IDataContainerOptions extends IDatabaseDataOptions {
   containerNodePath: string;
@@ -34,21 +34,21 @@ export interface IDataContainerOptions extends IDatabaseDataOptions {
 export class ContainerDataSource extends ResultSetDataSource<IDataContainerOptions> {
   currentTask: ITask<SqlExecuteInfo> | null;
 
-  get canCancel(): boolean {
+  override get canCancel(): boolean {
     return this.currentTask?.cancellable || false;
   }
 
-  get cancelled(): boolean {
+  override get cancelled(): boolean {
     return this.currentTask?.cancelled || false;
   }
 
   constructor(
-    serviceInjector: IServiceInjector,
+    serviceProvider: IServiceProvider,
     graphQLService: GraphQLService,
     asyncTaskInfoService: AsyncTaskInfoService,
     protected connectionExecutionContextService: ConnectionExecutionContextService,
   ) {
-    super(serviceInjector, graphQLService, asyncTaskInfoService);
+    super(serviceProvider, graphQLService, asyncTaskInfoService);
 
     this.currentTask = null;
     this.executionContext = null;
@@ -59,60 +59,20 @@ export class ContainerDataSource extends ResultSetDataSource<IDataContainerOptio
     });
   }
 
-  isReadonly(resultIndex: number): boolean {
-    return super.isReadonly(resultIndex) || this.getResult(resultIndex)?.data?.hasRowIdentifier === false;
+  override isOutdated(): boolean {
+    return super.isOutdated() || !this.executionContext?.context;
   }
 
-  isDisabled(resultIndex: number): boolean {
-    return !this.getResult(resultIndex)?.data && this.error === null;
-  }
-
-  async cancel(): Promise<void> {
+  override async cancel(): Promise<void> {
     await super.cancel();
     await this.currentTask?.cancel();
   }
 
   async request(prevResults: IDatabaseResultSet[]): Promise<IDatabaseResultSet[]> {
-    const options = this.options;
-
-    if (!options) {
-      throw new Error('containerNodePath must be provided for table');
-    }
-
     const executionContext = await this.ensureContextCreated();
     const context = executionContext.context!;
-    const offset = this.offset;
     const limit = this.count;
-
-    let firstResultId: string | undefined;
-
-    if (
-      prevResults.length === 1 &&
-      prevResults[0].contextId === context.id &&
-      prevResults[0].connectionId === context.connectionId &&
-      prevResults[0].id !== null
-    ) {
-      firstResultId = prevResults[0].id;
-    }
-
-    const task = this.asyncTaskInfoService.create(async () => {
-      const { taskInfo } = await this.graphQLService.sdk.asyncReadDataFromContainer({
-        projectId: context.projectId,
-        connectionId: context.connectionId,
-        contextId: context.id,
-        containerNodePath: options.containerNodePath,
-        resultId: firstResultId,
-        filter: {
-          offset,
-          limit,
-          constraints: options.constraints,
-          where: options.whereFilter || undefined,
-        },
-        dataFormat: this.dataFormat,
-      });
-
-      return taskInfo;
-    });
+    const task = await this.getRequestTask(prevResults, context);
 
     this.currentTask = executionContext.run(
       async () => {
@@ -203,7 +163,7 @@ export class ContainerDataSource extends ResultSetDataSource<IDataContainerOptio
         this.requestInfo = {
           ...this.requestInfo,
           requestDuration: response.result.duration,
-          requestMessage: 'Saved successfully',
+          requestMessage: 'plugin_data_viewer_result_set_save_success',
           source: null,
         };
       }
@@ -215,6 +175,53 @@ export class ContainerDataSource extends ResultSetDataSource<IDataContainerOptio
     }
 
     return prevResults;
+  }
+
+  protected getConfig(prevResults: IDatabaseResultSet[], context: IConnectionExecutionContextInfo) {
+    const options = this.options;
+
+    if (!options) {
+      throw new Error('Options must be provided');
+    }
+
+    const offset = this.offset;
+    const limit = this.count;
+    const resultId = this.getPreviousResultId(prevResults, context);
+
+    return {
+      projectId: context.projectId,
+      connectionId: context.connectionId,
+      contextId: context.id,
+      containerNodePath: options.containerNodePath,
+      resultId,
+      filter: {
+        offset,
+        limit,
+        constraints: options.constraints,
+        where: options.whereFilter || undefined,
+      },
+      dataFormat: this.dataFormat,
+    };
+  }
+
+  protected async getRequestTask(prevResults: IDatabaseResultSet[], context: IConnectionExecutionContextInfo): Promise<AsyncTask> {
+    const task = this.asyncTaskInfoService.create(async () => {
+      const config = this.getConfig(prevResults, context);
+      const { taskInfo } = await this.graphQLService.sdk.asyncReadDataFromContainer(config);
+      return taskInfo;
+    });
+
+    return task;
+  }
+
+  override setExecutionContext(context: IConnectionExecutionContext | null): this {
+    super.setExecutionContext(context);
+
+    for (const result of this.results) {
+      result.id = null;
+    }
+
+    return this;
   }
 
   private transformResults(executionContextInfo: IConnectionExecutionContextInfo, results: SqlQueryResults[], limit: number): IDatabaseResultSet[] {
@@ -249,6 +256,7 @@ export class ContainerDataSource extends ResultSetDataSource<IDataContainerOptio
 
       this.setExecutionContext(executionContext);
     }
+
     return this.executionContext!;
   }
 }

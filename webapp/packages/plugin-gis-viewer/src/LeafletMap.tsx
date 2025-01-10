@@ -15,7 +15,7 @@ import { GeoJSON, LayersControl, MapContainer, TileLayer, type TileLayerProps } 
 import { s, useS, useSplit, useTranslate } from '@cloudbeaver/core-blocks';
 import type { IResultSetElementKey, IResultSetValue } from '@cloudbeaver/plugin-data-viewer';
 
-import styles from './LeafletMap.m.css';
+import styles from './LeafletMap.module.css';
 import './styles/base.scss';
 
 export interface IAssociatedValue {
@@ -121,7 +121,7 @@ export const LeafletMap: React.FC<Props> = function LeafletMap({ geoJSON, crsKey
 
         popupContent += '<table>';
         for (let i = 0; i < associatedValues.length; i++) {
-          const { key, value } = associatedValues[i];
+          const { key, value } = associatedValues[i]!;
 
           if (value === undefined || typeof value === 'object') {
             continue;
@@ -141,7 +141,7 @@ export const LeafletMap: React.FC<Props> = function LeafletMap({ geoJSON, crsKey
       geoJSONLayerRef.clearLayers();
 
       for (let i = 0; i < geoJSON.length; i++) {
-        geoJSONLayerRef.addData(geoJSON[i]);
+        geoJSONLayerRef.addData(geoJSON[i]!);
       }
 
       const bounds = geoJSONLayerRef.getBounds();

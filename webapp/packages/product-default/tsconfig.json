@@ -19,13 +19,16 @@
       "path": "../core-localization/tsconfig.json"
     },
     {
-      "path": "../core-task-manager/tsconfig.json"
-    },
-    {
       "path": "../core-version-update/tsconfig.json"
     },
     {
       "path": "../plugin-administration/tsconfig.json"
+    },
+    {
+      "path": "../plugin-app-logo-administration/tsconfig.json"
+    },
+    {
+      "path": "../plugin-app-logo/tsconfig.json"
     },
     {
       "path": "../plugin-authentication-administration/tsconfig.json"
@@ -55,6 +58,9 @@
       "path": "../plugin-data-export/tsconfig.json"
     },
     {
+      "path": "../plugin-data-grid/tsconfig.json"
+    },
+    {
       "path": "../plugin-data-import/tsconfig.json"
     },
     {
@@ -62,6 +68,9 @@
     },
     {
       "path": "../plugin-data-viewer-result-set-grouping/tsconfig.json"
+    },
+    {
+      "path": "../plugin-data-viewer-result-trace-details/tsconfig.json"
     },
     {
       "path": "../plugin-data-viewer/tsconfig.json"
@@ -85,6 +94,12 @@
       "path": "../plugin-help/tsconfig.json"
     },
     {
+      "path": "../plugin-holidays-administration/tsconfig.json"
+    },
+    {
+      "path": "../plugin-holidays/tsconfig.json"
+    },
+    {
       "path": "../plugin-localization/tsconfig.json"
     },
     {
@@ -104,6 +119,9 @@
     },
     {
       "path": "../plugin-object-viewer/tsconfig.json"
+    },
+    {
+      "path": "../plugin-product-information-administration/tsconfig.json"
     },
     {
       "path": "../plugin-product/tsconfig.json"

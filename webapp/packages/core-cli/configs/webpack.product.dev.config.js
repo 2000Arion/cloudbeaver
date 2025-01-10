@@ -9,8 +9,8 @@ const { merge } = require('webpack-merge');
 const { resolve } = require('path');
 const webpack = require('webpack');
 const httpProxy = require('http-proxy');
+const { EsbuildPlugin } = require('esbuild-loader');
 const fs = require('fs');
-const { URL } = require('url');
 
 const commonConfig = require('./webpack.config.js');
 const ssoHtmlTemplate = require.resolve('@cloudbeaver/plugin-sso/src/index.html.ejs');
@@ -42,7 +42,6 @@ if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
 
 module.exports = (env, argv) => {
   const envServer = env.server ?? process.env.server;
-  const urlObject = new URL(envServer);
 
   return merge(commonConfig(env, argv), {
     mode: 'development',
@@ -72,15 +71,10 @@ module.exports = (env, argv) => {
       server,
       proxy: [
         {
-          context: ['/api'],
+          context: ['/api', '/api/ws'],
           target: envServer,
           secure: false,
-        },
-        {
-          context: ['/api/ws'],
-          target: `${urlObject.protocol === 'https:' ? 'wss:' : 'ws:'}//${urlObject.hostname}:${urlObject.port}/api/ws`,
           ws: true,
-          secure: false,
         },
       ],
       // onListening: function (devServer, ...args) {
@@ -101,6 +95,14 @@ module.exports = (env, argv) => {
         _VERSION_: JSON.stringify(package.version),
         _DEV_: true,
       }),
+
+      // for some reason it doesn't work with source maps
+      // new EsbuildPlugin({
+      //     define: {
+      //       _VERSION_: JSON.stringify(package.version),
+      //       _DEV_: JSON.stringify(true),
+      //     },
+      // }),
       new HtmlWebpackPlugin({
         template: resolve('src/index.html.ejs'),
         inject: 'body',

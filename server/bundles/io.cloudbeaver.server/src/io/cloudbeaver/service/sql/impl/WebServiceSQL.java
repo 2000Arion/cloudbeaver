@@ -36,7 +36,11 @@ import org.jkiss.dbeaver.model.data.DBDAttributeBinding;
 import org.jkiss.dbeaver.model.exec.DBCException;
 import org.jkiss.dbeaver.model.exec.DBCLogicalOperator;
 import org.jkiss.dbeaver.model.exec.DBExecUtils;
+import org.jkiss.dbeaver.model.exec.trace.DBCTrace;
+import org.jkiss.dbeaver.model.exec.trace.DBCTraceDynamic;
+import org.jkiss.dbeaver.model.exec.trace.DBCTraceProperty;
 import org.jkiss.dbeaver.model.impl.sql.BasicSQLDialect;
+import org.jkiss.dbeaver.model.navigator.DBNModel;
 import org.jkiss.dbeaver.model.navigator.DBNNode;
 import org.jkiss.dbeaver.model.runtime.DBRProgressMonitor;
 import org.jkiss.dbeaver.model.sql.*;
@@ -81,7 +85,7 @@ public class WebServiceSQL implements DBWServiceSQL {
             WebConnectionInfo webConnection = WebServiceBindingBase.getWebConnection(session, projectId, connectionId);
             conToRead.add(webConnection);
         } else {
-            conToRead.addAll(session.getConnections());
+            conToRead.addAll(session.getAccessibleProjects().stream().flatMap(p -> p.getConnections().stream()).toList());
         }
 
         List<WebSQLContextInfo> contexts = new ArrayList<>();
@@ -238,8 +242,9 @@ public class WebServiceSQL implements DBWServiceSQL {
     private List<DBSObject> getObjectListFromNodeIds(@NotNull WebSession session, @NotNull List<String> nodePathList) throws DBWebException {
         try {
             List<DBSObject> objectList = new ArrayList<>(nodePathList.size());
+            DBNModel navigatorModel = session.getNavigatorModelOrThrow();
             for (String nodePath : nodePathList) {
-                DBNNode node = session.getNavigatorModel().getNodeByPath(session.getProgressMonitor(), nodePath);
+                DBNNode node = navigatorModel.getNodeByPath(session.getProgressMonitor(), nodePath);
                 if (node == null) {
                     throw new DBException("Node '" + nodePath + "' not found");
                 }
@@ -455,6 +460,21 @@ public class WebServiceSQL implements DBWServiceSQL {
         return contextInfo.getProcessor().getWebSession().createAndRunAsyncTask("Read data from container " + nodePath, runnable);
     }
 
+    @NotNull
+    @Override
+    public List<DBCTraceProperty> readDynamicTrace(
+        @NotNull WebSession webSession,
+        @NotNull WebSQLContextInfo contextInfo,
+        @NotNull String resultsId
+    ) throws DBException {
+        WebSQLResultsInfo resultsInfo = contextInfo.getResults(resultsId);
+        DBCTrace trace = resultsInfo.getTrace();
+        if (trace instanceof DBCTraceDynamic traceDynamic) {
+            return traceDynamic.getTraceProperties(webSession.getProgressMonitor());
+        }
+        throw new DBWebException("Dynamic trace is not found in provided results info");
+    }
+
     @Override
     public WebSQLExecuteInfo asyncGetQueryResults(@NotNull WebSession webSession, @NotNull String taskId) throws DBWebException {
         WebAsyncTaskInfo taskStatus = webSession.asyncTaskStatus(taskId, false);
@@ -540,7 +560,7 @@ public class WebServiceSQL implements DBWServiceSQL {
                 resultsInfo.getDataContainer(),
                 getSqlDialectFromConnection(dataSource.getContainer()),
                 contextInfo.getProcessor().getSyntaxManager(),
-                columnsList,
+                columnsList.stream().map(s -> SQLGroupingAttribute.makeCustom(dataSource, s)).toList(),
                 functions == null ? List.of(SQLGroupingQueryGenerator.DEFAULT_FUNCTION) : functions, // backward compatibility
                 CommonUtils.getBoolean(showDuplicatesOnly, false));
             return groupingQueryGenerator.generateGroupingQuery(resultsInfo.getQueryText());

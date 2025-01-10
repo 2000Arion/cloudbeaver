@@ -9,8 +9,9 @@ import 'reflect-metadata';
 
 import { bootstrap } from '@cloudbeaver/core-bootstrap';
 import type { PluginManifest } from '@cloudbeaver/core-di';
-import { coreTaskManagerManifest } from '@cloudbeaver/core-task-manager';
 import administration from '@cloudbeaver/plugin-administration';
+import appLogoPlugin from '@cloudbeaver/plugin-app-logo';
+import appLogoPluginAdministration from '@cloudbeaver/plugin-app-logo-administration';
 import authentication from '@cloudbeaver/plugin-authentication';
 import authenticationAdministration from '@cloudbeaver/plugin-authentication-administration';
 import { browserPlugin } from '@cloudbeaver/plugin-browser';
@@ -20,16 +21,20 @@ import connectionTemplate from '@cloudbeaver/plugin-connection-template';
 import connectionPlugin from '@cloudbeaver/plugin-connections';
 import connectionAdministration from '@cloudbeaver/plugin-connections-administration';
 import { dataExportManifest } from '@cloudbeaver/plugin-data-export';
+import { dataGridPlugin } from '@cloudbeaver/plugin-data-grid';
 import { dataImportPluginManifest } from '@cloudbeaver/plugin-data-import';
 import { dataSpreadsheetNewManifest } from '@cloudbeaver/plugin-data-spreadsheet-new';
 import { dataViewerManifest } from '@cloudbeaver/plugin-data-viewer';
 import { dvResultSetGroupingPlugin } from '@cloudbeaver/plugin-data-viewer-result-set-grouping';
+import { dataViewerResultTraceDetailsPlugin } from '@cloudbeaver/plugin-data-viewer-result-trace-details';
 import { datasourceContextSwitchPluginManifest } from '@cloudbeaver/plugin-datasource-context-switch';
 import { datasourceTransactionManagerPlugin } from '@cloudbeaver/plugin-datasource-transaction-manager';
 import ddlViewer from '@cloudbeaver/plugin-ddl-viewer';
 import devTools from '@cloudbeaver/plugin-devtools';
 import gisViewer from '@cloudbeaver/plugin-gis-viewer';
 import help from '@cloudbeaver/plugin-help';
+import holidaysPlugin from '@cloudbeaver/plugin-holidays';
+import holidaysPluginAdministration from '@cloudbeaver/plugin-holidays-administration';
 import localization from '@cloudbeaver/plugin-localization';
 import logViewer from '@cloudbeaver/plugin-log-viewer';
 import { navigationTabsPlugin } from '@cloudbeaver/plugin-navigation-tabs';
@@ -38,6 +43,7 @@ import navigationTreeFilters from '@cloudbeaver/plugin-navigation-tree-filters';
 import { navigationTreeRMPlugin } from '@cloudbeaver/plugin-navigation-tree-rm';
 import { objectViewerManifest } from '@cloudbeaver/plugin-object-viewer';
 import productPlugin from '@cloudbeaver/plugin-product';
+import { productInformationPlugin } from '@cloudbeaver/plugin-product-information-administration';
 import projects from '@cloudbeaver/plugin-projects';
 import resourceManager from '@cloudbeaver/plugin-resource-manager';
 import resourceManagerAdministration from '@cloudbeaver/plugin-resource-manager-administration';
@@ -66,13 +72,15 @@ import { userProfileSettingsPlugin } from '@cloudbeaver/plugin-user-profile-sett
 import version from '@cloudbeaver/plugin-version';
 import versionUpdate from '@cloudbeaver/plugin-version-update-administration';
 
-import { defaultProductManifest } from './manifest';
+import { defaultProductManifest } from './manifest.js';
 
 const PLUGINS: PluginManifest[] = [
   ssoPlugin,
   devTools,
+  productInformationPlugin,
   administration,
   dataSpreadsheetNewManifest,
+  dataGridPlugin,
   authentication,
   authenticationAdministration,
   theme,
@@ -83,6 +91,7 @@ const PLUGINS: PluginManifest[] = [
   dataExportManifest,
   dataImportPluginManifest,
   dataViewerManifest,
+  dataViewerResultTraceDetailsPlugin,
   dvResultSetGroupingPlugin,
   gisViewer,
   ddlViewer,
@@ -121,10 +130,13 @@ const PLUGINS: PluginManifest[] = [
   projects,
   browserPlugin,
   navigationTreeFilters,
-  coreTaskManagerManifest,
   taskManagerPluginManifest,
   settingsAdministrationPlugin,
   userProfileSettingsPlugin,
+  holidaysPlugin,
+  holidaysPluginAdministration,
+  appLogoPlugin,
+  appLogoPluginAdministration,
   // must be las one to override all
   defaultProductManifest,
 ];

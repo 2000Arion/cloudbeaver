@@ -8,35 +8,37 @@
 import { observer } from 'mobx-react-lite';
 import { useMemo } from 'react';
 
-import { s, SContext, StyleRegistry, Translate, useS, useUserData } from '@cloudbeaver/core-blocks';
+import { s, SContext, type StyleRegistry, Translate, useS, useUserData } from '@cloudbeaver/core-blocks';
 import { useService } from '@cloudbeaver/core-di';
 import { NavNodeInfoResource, NavTreeResource, ProjectsNavNodeService, ROOT_NODE_PATH } from '@cloudbeaver/core-navigation-tree';
 import { ProjectsService } from '@cloudbeaver/core-projects';
 import { CaptureView } from '@cloudbeaver/core-view';
 
-import { ElementsTreeToolsStyles } from '../index';
-import { NavNodeViewService } from '../NodesManager/NavNodeView/NavNodeViewService';
-import { navigationTreeConnectionGroupFilter } from './ConnectionGroup/navigationTreeConnectionGroupFilter';
-import { navigationTreeConnectionGroupRenderer } from './ConnectionGroup/navigationTreeConnectionGroupRenderer';
-import { navTreeConnectionRenderer } from './ConnectionsRenderer/navTreeConnectionRenderer';
-import { ElementsTree } from './ElementsTree/ElementsTree';
+import { ElementsTreeToolsStyles } from '../index.js';
+import { NavNodeViewService } from '../NodesManager/NavNodeView/NavNodeViewService.js';
+import { navigationTreeConnectionGroupFilter } from './ConnectionGroup/navigationTreeConnectionGroupFilter.js';
+import { navigationTreeConnectionGroupRenderer } from './ConnectionGroup/navigationTreeConnectionGroupRenderer.js';
+import { navTreeConnectionRenderer } from './ConnectionsRenderer/navTreeConnectionRenderer.js';
+import { ElementsTree } from './ElementsTree/ElementsTree.js';
 import {
   createElementsTreeSettings,
   validateElementsTreeSettings,
-} from './ElementsTree/ElementsTreeTools/NavigationTreeSettings/createElementsTreeSettings';
-import { transformFilteredNodeInfo } from './ElementsTree/transformFilteredNodeInfo';
-import type { IElementsTreeSettings } from './ElementsTree/useElementsTree';
-import elementsTreeToolsStyles from './ElementsTreeTools.m.css';
-import { getNavigationTreeUserSettingsId } from './getNavigationTreeUserSettingsId';
-import style from './NavigationTree.m.css';
-import { navigationTreeDuplicateFilter } from './navigationTreeDuplicateIdFilter';
-import { NavigationTreeService } from './NavigationTreeService';
-import { navigationTreeProjectFilter } from './ProjectsRenderer/navigationTreeProjectFilter';
-import { navigationTreeProjectSearchCompare } from './ProjectsRenderer/navigationTreeProjectSearchCompare';
-import { navigationTreeProjectsExpandStateGetter } from './ProjectsRenderer/navigationTreeProjectsExpandStateGetter';
-import { navigationTreeProjectsRendererRenderer } from './ProjectsRenderer/navigationTreeProjectsRendererRenderer';
-import { ProjectsSettingsPlaceholderElement } from './ProjectsRenderer/ProjectsSettingsForm';
-import { useNavigationTree } from './useNavigationTree';
+} from './ElementsTree/ElementsTreeTools/NavigationTreeSettings/createElementsTreeSettings.js';
+import { ObjectsDescriptionSettingsPlaceholderElement } from './ElementsTree/ElementsTreeTools/NavigationTreeSettings/ObjectsDescriptionSettingsForm.js';
+import { transformDescriptionNodeInfo } from './ElementsTree/transformDescriptionNodeInfo.js';
+import { transformFilteredNodeInfo } from './ElementsTree/transformFilteredNodeInfo.js';
+import type { IElementsTreeSettings } from './ElementsTree/useElementsTree.js';
+import elementsTreeToolsStyles from './ElementsTreeTools.module.css';
+import { getNavigationTreeUserSettingsId } from './getNavigationTreeUserSettingsId.js';
+import style from './NavigationTree.module.css';
+import { navigationTreeDuplicateFilter } from './navigationTreeDuplicateIdFilter.js';
+import { NavigationTreeService } from './NavigationTreeService.js';
+import { navigationTreeProjectFilter } from './ProjectsRenderer/navigationTreeProjectFilter.js';
+import { navigationTreeProjectSearchCompare } from './ProjectsRenderer/navigationTreeProjectSearchCompare.js';
+import { navigationTreeProjectsExpandStateGetter } from './ProjectsRenderer/navigationTreeProjectsExpandStateGetter.js';
+import { navigationTreeProjectsRendererRenderer } from './ProjectsRenderer/navigationTreeProjectsRendererRenderer.js';
+import { ProjectsSettingsPlaceholderElement } from './ProjectsRenderer/ProjectsSettingsForm.js';
+import { useNavigationTree } from './useNavigationTree.js';
 
 const registry: StyleRegistry = [
   [
@@ -77,12 +79,13 @@ export const NavigationTree = observer(function NavigationTree() {
     [navNodeInfoResource, projectsService, projectsNavNodeService],
   );
   const transformFilteredNode = useMemo(() => transformFilteredNodeInfo(navNodeInfoResource), [navNodeInfoResource]);
+  const transformDescriptionNode = useMemo(() => transformDescriptionNodeInfo(navNodeInfoResource), [navNodeInfoResource]);
   const projectFilter = useMemo(
     () => navigationTreeProjectFilter(projectsNavNodeService, projectsService, navNodeInfoResource, navTreeResource),
     [projectsNavNodeService, projectsService, navNodeInfoResource, navTreeResource],
   );
 
-  const settingsElements = useMemo(() => [ProjectsSettingsPlaceholderElement], []);
+  const settingsElements = useMemo(() => [ProjectsSettingsPlaceholderElement, ObjectsDescriptionSettingsPlaceholderElement], []);
 
   return (
     <SContext registry={registry}>
@@ -93,7 +96,7 @@ export const NavigationTree = observer(function NavigationTree() {
           filters={[duplicateFilter, connectionGroupFilter, projectFilter]}
           renderers={[projectsRendererRenderer, navigationTreeConnectionGroupRenderer, connectionRenderer]}
           navNodeFilterCompare={navigationTreeProjectSearchCompare}
-          nodeInfoTransformers={[transformFilteredNode]}
+          nodeInfoTransformers={[transformFilteredNode, transformDescriptionNode]}
           expandStateGetters={[projectsExpandStateGetter]}
           settingsElements={settingsElements}
           className={s(styles, { elementsTree: true })}

@@ -8,21 +8,22 @@
 import { runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 
-import { s, SContext, StyleRegistry, TextPlaceholder, useResource, useS, useTranslate } from '@cloudbeaver/core-blocks';
+import { getComputed, s, SContext, type StyleRegistry, TextPlaceholder, useResource, useS, useTranslate } from '@cloudbeaver/core-blocks';
 import { ConnectionInfoResource } from '@cloudbeaver/core-connections';
 import { useService } from '@cloudbeaver/core-di';
-import { NavNodeInfoResource } from '@cloudbeaver/core-navigation-tree';
+import { NavNodeInfoResource, NavTreeResource } from '@cloudbeaver/core-navigation-tree';
+import { resourceKeyList } from '@cloudbeaver/core-resource';
 import { TabPanel, TabsBox, TabStyles, useTabLocalState } from '@cloudbeaver/core-ui';
 import { MetadataMap } from '@cloudbeaver/core-utils';
 import { ConnectionShieldLazy } from '@cloudbeaver/plugin-connections';
 import type { TabHandlerPanelComponent } from '@cloudbeaver/plugin-navigation-tabs';
 
-import type { IObjectViewerTabState } from '../IObjectViewerTabState';
-import { DBObjectPagePanel } from '../ObjectPage/DBObjectPagePanel';
-import { DBObjectPageService } from '../ObjectPage/DBObjectPageService';
-import { DBObjectPageTab } from '../ObjectPage/DBObjectPageTab';
-import styles from './shared/ObjectViewerPanel.m.css';
-import ObjectViewerPanelTab from './shared/ObjectViewerPanelTab.m.css';
+import type { IObjectViewerTabState } from '../IObjectViewerTabState.js';
+import { DBObjectPagePanel } from '../ObjectPage/DBObjectPagePanel.js';
+import { DBObjectPageService } from '../ObjectPage/DBObjectPageService.js';
+import { DBObjectPageTab } from '../ObjectPage/DBObjectPageTab.js';
+import styles from './shared/ObjectViewerPanel.module.css';
+import ObjectViewerPanelTab from './shared/ObjectViewerPanelTab.module.css';
 
 const tabsRegistry: StyleRegistry = [
   [
@@ -38,6 +39,7 @@ export const ObjectViewerPanel: TabHandlerPanelComponent<IObjectViewerTabState> 
   const translate = useTranslate();
   const dbObjectPagesService = useService(DBObjectPageService);
   const navNodeInfoResource = useService(NavNodeInfoResource);
+  const navTreeResource = useService(NavTreeResource);
   const innerTabState = useTabLocalState(() => new MetadataMap<string, any>());
   const style = useS(styles);
 
@@ -53,7 +55,8 @@ export const ObjectViewerPanel: TabHandlerPanelComponent<IObjectViewerTabState> 
         tab.handlerState.tabTitle = data.name;
       });
     },
-    active: !connection.isLoading() && connection.data?.connected,
+    freeze: navTreeResource.isOutdated(resourceKeyList(navNodeInfoResource.getParents(objectId))),
+    active: getComputed(() => !!connection.tryGetData?.connected && !connection.outdated),
   });
 
   const pages = dbObjectPagesService.orderedPages;
@@ -64,7 +67,7 @@ export const ObjectViewerPanel: TabHandlerPanelComponent<IObjectViewerTabState> 
 
   return (
     <ConnectionShieldLazy connectionKey={connectionKey}>
-      {node.data ? (
+      {node.tryGetData ? (
         <TabsBox
           currentTabId={tab.handlerState.pageId}
           tabsClassName={s(style, { tabs: true })}

@@ -20,7 +20,7 @@ import io.cloudbeaver.DBWebException;
 import io.cloudbeaver.model.WebConnectionInfo;
 import io.cloudbeaver.model.session.WebSession;
 import io.cloudbeaver.model.session.WebSessionProvider;
-import io.cloudbeaver.server.CBPlatform;
+import io.cloudbeaver.server.WebAppUtils;
 import io.cloudbeaver.server.jobs.SqlOutputLogReaderJob;
 import org.eclipse.jface.text.Document;
 import org.jkiss.code.NotNull;
@@ -200,10 +200,15 @@ public class WebSQLProcessor implements WebSessionProvider {
             SQLScriptElement element = SQLScriptParser.extractActiveQuery(parserContext, 0, sql.length());
 
             if (element instanceof SQLControlCommand command) {
-                dataContainer.getScriptContext().executeControlCommand(command);
-                WebSQLQueryResults stats = new WebSQLQueryResults(webSession, dataFormat);
-                executeInfo.setResults(new WebSQLQueryResults[]{stats});
-            } else if (element instanceof SQLQuery sqlQuery) {
+                SQLControlResult controlResult = dataContainer.getScriptContext().executeControlCommand(monitor, command);
+                if (controlResult.getTransformed() != null) {
+                    element = controlResult.getTransformed();
+                } else {
+                    WebSQLQueryResults stats = new WebSQLQueryResults(webSession, dataFormat);
+                    executeInfo.setResults(new WebSQLQueryResults[]{stats});
+                }
+            }
+            if (element instanceof SQLQuery sqlQuery) {
                 DBExecUtils.tryExecuteRecover(monitor, connection.getDataSource(), param -> {
                     try (DBCSession session = context.openSession(monitor, resolveQueryPurpose(dataFilter), "Execute SQL")) {
                         AbstractExecutionSource source = new AbstractExecutionSource(
@@ -259,6 +264,8 @@ public class WebSQLProcessor implements WebSessionProvider {
                         }
                     }
                 });
+            } else {
+                executeInfo.setResults(new WebSQLQueryResults[0]);
             }
         } catch (DBException e) {
             throw new DBWebException("Error executing query", e);
@@ -793,6 +800,10 @@ public class WebSQLProcessor implements WebSessionProvider {
                     cellRawValue,
                     false,
                     true);
+                //FIXME: fix array editing for nosql databases
+                if (realCellValue == null && cellRawValue != null && updateAttribute.getDataKind() == DBPDataKind.ARRAY) {
+                    throw new DBCException("Array update is not supported");
+                }
             } catch (DBCException e) {
                 //checks if this function is used only for script generation
                 if (justGenerateScript) {
@@ -944,7 +955,7 @@ public class WebSQLProcessor implements WebSessionProvider {
 
     @NotNull
     public <T> T getDataContainerByNodePath(DBRProgressMonitor monitor, @NotNull String containerPath, Class<T> type) throws DBException {
-        DBNNode node = webSession.getNavigatorModel().getNodeByPath(monitor, containerPath);
+        DBNNode node = webSession.getNavigatorModelOrThrow().getNodeByPath(monitor, containerPath);
         if (node == null) {
             throw new DBWebException("Container node '" + containerPath + "' not found");
         }
@@ -1138,11 +1149,12 @@ public class WebSQLProcessor implements WebSessionProvider {
         return filter.hasFilters() ? DBCExecutionPurpose.USER_FILTERED : DBCExecutionPurpose.USER;
     }
 
-    private Object setCellRowValue(Object cellRow, WebSession webSession, DBCSession dbcSession, DBDAttributeBinding allAttributes, boolean withoutExecution) {
+    private Object setCellRowValue(Object cellRow, WebSession webSession, DBCSession dbcSession, DBDAttributeBinding allAttributes, boolean withoutExecution)
+        throws DBException {
         if (cellRow instanceof Map<?, ?>) {
             Map<String, Object> variables = (Map<String, Object>) cellRow;
             if (variables.get(FILE_ID) != null) {
-                Path path = CBPlatform.getInstance()
+                Path path = WebAppUtils.getWebPlatform()
                     .getTempFolder(webSession.getProgressMonitor(), TEMP_FILE_FOLDER)
                     .resolve(webSession.getSessionId())
                     .resolve(variables.get(FILE_ID).toString());
@@ -1151,14 +1163,10 @@ public class WebSQLProcessor implements WebSessionProvider {
                     var file = Files.newInputStream(path);
                     return convertInputCellValue(dbcSession, allAttributes, file, withoutExecution);
                 } catch (IOException | DBCException e) {
-                    return new DBException(e.getMessage());
+                    throw new DBException(e.getMessage());
                 }
             }
         }
-        try {
-            return convertInputCellValue(dbcSession, allAttributes, cellRow, withoutExecution);
-        } catch (DBCException e) {
-            return new DBException(e.getMessage());
-        }
+        return convertInputCellValue(dbcSession, allAttributes, cellRow, withoutExecution);
     }
 }
