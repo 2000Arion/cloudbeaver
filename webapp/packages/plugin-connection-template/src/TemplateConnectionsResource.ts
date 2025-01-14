@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  */
 import { AppAuthService } from '@cloudbeaver/core-authentication';
-import { Connection, ConnectionInfoResource } from '@cloudbeaver/core-connections';
+import { type Connection, ConnectionInfoResource } from '@cloudbeaver/core-connections';
 import { injectable } from '@cloudbeaver/core-di';
 import { CachedDataResource, ResourceKeyUtils } from '@cloudbeaver/core-resource';
 import { SessionDataResource } from '@cloudbeaver/core-root';
@@ -61,14 +61,11 @@ export class TemplateConnectionsResource extends CachedDataResource<Connection[]
   protected async loader(): Promise<Connection[]> {
     const { connections } = await this.graphQLService.sdk.getTemplateConnections({
       includeNetworkHandlersConfig: true,
-      customIncludeOriginDetails: false,
       includeAuthProperties: true,
-      includeOrigin: false,
       includeAuthNeeded: true,
       includeCredentialsSaved: false,
       includeProperties: false,
       includeProviderProperties: false,
-      includeSharedSecrets: false,
       customIncludeOptions: false,
     });
     return connections;

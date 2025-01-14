@@ -38,7 +38,7 @@ import java.util.Map;
  */
 public interface DBWServiceCore extends DBWService {
 
-    @WebAction(authRequired = false)
+    @WebAction(authRequired = false, initializationRequired = false)
     WebServerConfig getServerConfig() throws DBWebException;
 
     @WebAction(authRequired = false)
@@ -146,6 +146,7 @@ public interface DBWServiceCore extends DBWService {
         @NotNull String connectionId) throws DBWebException;
 
     @WebAction
+    @Deprecated
     WebConnectionInfo createConnectionFromTemplate(
         @NotNull WebSession webSession,
         @NotNull String projectId,

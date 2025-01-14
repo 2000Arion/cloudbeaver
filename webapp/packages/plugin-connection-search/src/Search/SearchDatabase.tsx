@@ -15,9 +15,9 @@ import { CachedMapAllKey } from '@cloudbeaver/core-resource';
 import type { AdminConnectionSearchInfo } from '@cloudbeaver/core-sdk';
 import { ConnectionFormLoader } from '@cloudbeaver/plugin-connections';
 
-import { ConnectionSearchService } from './ConnectionSearchService';
-import { DatabaseList } from './DatabaseList';
-import style from './SearchDatabase.m.css';
+import { ConnectionSearchService } from './ConnectionSearchService.js';
+import { DatabaseList } from './DatabaseList.js';
+import style from './SearchDatabase.module.css';
 
 export const SearchDatabase: React.FC = observer(function SearchDatabase() {
   const styles = useS(style);

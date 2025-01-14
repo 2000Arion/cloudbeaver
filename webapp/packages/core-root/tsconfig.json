@@ -21,6 +21,9 @@
       "path": "../core-executor/tsconfig.json"
     },
     {
+      "path": "../core-links/tsconfig.json"
+    },
+    {
       "path": "../core-localization/tsconfig.json"
     },
     {

@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
  */
-import style from './Fill.m.css';
-import { s } from './s';
-import { useS } from './useS';
+import style from './Fill.module.css';
+import { s } from './s.js';
+import { useS } from './useS.js';
 
 interface Props {
   className?: string;

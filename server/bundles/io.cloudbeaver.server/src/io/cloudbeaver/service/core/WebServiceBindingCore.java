@@ -24,12 +24,13 @@ import io.cloudbeaver.WebServiceUtils;
 import io.cloudbeaver.model.WebConnectionConfig;
 import io.cloudbeaver.model.WebNetworkHandlerConfigInput;
 import io.cloudbeaver.model.session.WebSession;
-import io.cloudbeaver.server.CBPlatform;
+import io.cloudbeaver.server.BaseWebPlatform;
+import io.cloudbeaver.server.WebAppSessionManager;
+import io.cloudbeaver.server.WebAppUtils;
 import io.cloudbeaver.server.graphql.GraphQLEndpoint;
 import io.cloudbeaver.service.DBWBindingContext;
 import io.cloudbeaver.service.WebServiceBindingBase;
 import io.cloudbeaver.service.core.impl.WebServiceCore;
-import io.cloudbeaver.service.session.WebSessionManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -49,8 +50,7 @@ public class WebServiceBindingCore extends WebServiceBindingBase<DBWServiceCore>
 
     @Override
     public void bindWiring(DBWBindingContext model) throws DBWebException {
-        CBPlatform platform = CBPlatform.getInstance();
-        WebSessionManager sessionManager = platform.getSessionManager();
+        WebAppSessionManager sessionManager = WebAppUtils.getWebApplication().getSessionManager();
         model.getQueryType()
             .dataFetcher("serverConfig", env -> getService(env).getServerConfig())
             .dataFetcher("productSettings", env -> getService(env).getProductSettings(getWebSession(env)))

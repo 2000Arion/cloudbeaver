@@ -42,6 +42,7 @@ type AuthProviderConfiguration {
     signOutLink: String
     metadataLink: String
     acsLink: String
+    entityIdLink: String @since(version: "24.2.1")
 }
 
 type AuthProviderCredentialsProfile {
@@ -60,6 +61,7 @@ type AuthProviderInfo {
     defaultProvider: Boolean!
     trusted: Boolean!
     private: Boolean!
+    authHidden: Boolean! @since(version: "24.2.4")
     supportProvisioning: Boolean!
 
     # Configurable providers must be configured first. See configurations field.
@@ -69,6 +71,8 @@ type AuthProviderInfo {
 
     # Provider configurations (applicable only if configurable=true)
     configurations: [AuthProviderConfiguration!]
+
+    templateConfiguration: AuthProviderConfiguration! @since(version: "24.1.2")
 
     credentialProfiles: [AuthProviderCredentialsProfile!]!
 
@@ -136,6 +140,9 @@ type UserInfo {
     configurationParameters: Object!
     # User teams
     teams: [UserTeamInfo!]!
+
+    @since(version: "24.2.3")
+    isAnonymous: Boolean!
 }
 
 type UserTeamInfo {

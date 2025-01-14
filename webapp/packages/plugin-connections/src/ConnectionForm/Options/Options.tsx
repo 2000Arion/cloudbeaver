@@ -14,40 +14,46 @@ import {
   Combobox,
   Container,
   FieldCheckbox,
+  Flex,
   Form,
   FormFieldDescription,
   getComputed,
   Group,
   GroupTitle,
+  IconOrImage,
   InputField,
   Link,
+  ObjectPropertyInfoForm,
   Radio,
   RadioGroup,
   s,
   Textarea,
   useAdministrationSettings,
   useFormValidator,
+  usePermission,
   useResource,
   useS,
   useTranslate,
 } from '@cloudbeaver/core-blocks';
-import { DatabaseAuthModelsResource, DBDriverResource, isLocalConnection } from '@cloudbeaver/core-connections';
+import { DatabaseAuthModelsResource, type DBDriver, DBDriverResource, isLocalConnection } from '@cloudbeaver/core-connections';
 import { useService } from '@cloudbeaver/core-di';
-import { ServerConfigResource } from '@cloudbeaver/core-root';
+import { ProjectInfoResource } from '@cloudbeaver/core-projects';
+import { EAdminPermission, ServerConfigResource } from '@cloudbeaver/core-root';
 import { DriverConfigurationType } from '@cloudbeaver/core-sdk';
 import { type TabContainerPanelComponent, TabsContext, useAuthenticationAction } from '@cloudbeaver/core-ui';
+import { EMPTY_ARRAY } from '@cloudbeaver/core-utils';
 import { ProjectSelect } from '@cloudbeaver/plugin-projects';
 
-import { ConnectionAuthModelCredentialsForm } from '../ConnectionAuthModelCredentials/ConnectionAuthModelCredentialsForm';
-import { ConnectionAuthModelSelector } from '../ConnectionAuthModelCredentials/ConnectionAuthModelSelector';
-import { ConnectionFormService } from '../ConnectionFormService';
-import type { IConnectionFormProps } from '../IConnectionFormProps';
-import { CONNECTION_FORM_SHARED_CREDENTIALS_TAB_ID } from '../SharedCredentials/CONNECTION_FORM_SHARED_CREDENTIALS_TAB_ID';
-import { ConnectionOptionsTabService } from './ConnectionOptionsTabService';
-import styles from './Options.m.css';
-import { ParametersForm } from './ParametersForm';
-import { ProviderPropertiesForm } from './ProviderPropertiesForm';
-import { useOptions } from './useOptions';
+import { ConnectionAuthModelCredentialsForm } from '../ConnectionAuthModelCredentials/ConnectionAuthModelCredentialsForm.js';
+import { ConnectionAuthModelSelector } from '../ConnectionAuthModelCredentials/ConnectionAuthModelSelector.js';
+import { ConnectionFormService } from '../ConnectionFormService.js';
+import type { IConnectionFormProps } from '../IConnectionFormProps.js';
+import { CONNECTION_FORM_SHARED_CREDENTIALS_TAB_ID } from '../SharedCredentials/CONNECTION_FORM_SHARED_CREDENTIALS_TAB_ID.js';
+import { AdvancedPropertiesForm } from './AdvancedPropertiesForm.js';
+import styles from './Options.module.css';
+import { ParametersForm } from './ParametersForm.js';
+import { ProviderPropertiesForm } from './ProviderPropertiesForm.js';
+import { useOptions } from './useOptions.js';
 
 const PROFILE_AUTH_MODEL_ID = 'profile';
 
@@ -56,28 +62,33 @@ interface IDriverConfiguration {
   value: DriverConfigurationType;
   description?: string;
   icon?: string;
+  isVisible: (driver: DBDriver) => boolean;
 }
 
 const driverConfiguration: IDriverConfiguration[] = [
   {
     name: 'Manual',
     value: DriverConfigurationType.Manual,
+    isVisible: driver => driver.configurationTypes.includes(DriverConfigurationType.Manual),
   },
   {
     name: 'URL',
     value: DriverConfigurationType.Url,
+    isVisible: driver => driver.configurationTypes.includes(DriverConfigurationType.Url),
   },
 ];
 
 export const Options: TabContainerPanelComponent<IConnectionFormProps> = observer(function Options({ state }) {
+  const isAdmin = usePermission(EAdminPermission.admin);
   const serverConfigResource = useResource(Options, ServerConfigResource, undefined);
-  const connectionOptionsTabService = useService(ConnectionOptionsTabService);
+  const projectInfoResource = useService(ProjectInfoResource);
   const service = useService(ConnectionFormService);
   const formRef = useRef<HTMLFormElement>(null);
   const translate = useTranslate();
-  const { info, config, availableDrivers, submittingTask: submittingHandlers, disabled } = state;
+  const { info, originInfo, config, availableDrivers, submittingTask: submittingHandlers, disabled } = state;
   const style = useS(styles);
   const tabsState = useContext(TabsContext);
+  const isSharedProject = projectInfoResource.isProjectShared(state.projectId);
 
   //@TODO it's here until the profile implementation in the CloudBeaver
   const readonly = state.readonly || info?.authModel === PROFILE_AUTH_MODEL_ID;
@@ -89,7 +100,7 @@ export const Options: TabContainerPanelComponent<IConnectionFormProps> = observe
   const driverMap = useResource(
     Options,
     DBDriverResource,
-    { key: config.driverId || null, includes: ['includeProviderProperties'] as const },
+    { key: config.driverId || null, includes: ['includeProviderProperties', 'includeMainProperties'] as const },
     {
       onData: data => {
         optionsHook.setDefaults(data);
@@ -98,7 +109,7 @@ export const Options: TabContainerPanelComponent<IConnectionFormProps> = observe
   );
 
   const driver = driverMap.data;
-  const configurationTypes = driverConfiguration.filter(conf => driver?.configurationTypes.includes(conf.value));
+  const configurationTypes = driverConfiguration.filter(configuration => driver && configuration.isVisible(driver));
 
   function handleFormChange(value?: unknown, name?: string) {
     if (name !== 'name' && optionsHook.isNameAutoFill()) {
@@ -141,11 +152,16 @@ export const Options: TabContainerPanelComponent<IConnectionFormProps> = observe
     providerId: authModel?.requiredAuth ?? info?.requiredAuth ?? AUTH_PROVIDER_LOCAL_ID,
   });
 
-  const isURLConfiguration = config.configurationType === DriverConfigurationType.Url;
   const edit = state.mode === 'edit';
-  const originLocal = !info || isLocalConnection(info);
+  const originLocal = !info || (originInfo?.origin && isLocalConnection(originInfo.origin));
 
-  const drivers = driverMap.resource.enabledDrivers.filter(({ id }) => availableDrivers.includes(id));
+  const drivers = driverMap.resource.enabledDrivers.filter(({ id, driverInstalled }) => {
+    if (!edit && !isAdmin && !driverInstalled) {
+      return false;
+    }
+
+    return availableDrivers.includes(id);
+  });
 
   let properties = authModel?.properties;
 
@@ -181,71 +197,69 @@ export const Options: TabContainerPanelComponent<IConnectionFormProps> = observe
                 tiny
                 fill
               >
-                {translate('connections_connection_driver')}
+                <Flex gap="xs">
+                  {isAdmin && !driver?.driverInstalled && (
+                    <IconOrImage icon="/icons/info_icon_sm.svg" title={translate('plugin_connections_connection_driver_not_installed')} />
+                  )}
+                  {translate('connections_connection_driver')}
+                </Flex>
               </Combobox>
               {configurationTypes.length > 1 && (
-                <>
-                  {/*<Combobox
-                  name='configurationType'
-                  state={config}
-                  items={configurationTypes}
-                  keySelector={conf => conf.value}
-                  valueSelector={conf => conf.name}
-                  titleSelector={conf => conf.description}
-                  readOnly={readonly || configurationTypes.length < 2}
-                  disabled={disabled}
-                  tiny
-                  fill
-                >
-                  {translate('connections_connection_configuration')}
-              </Combobox>*/}
-                  <FormFieldDescription label={translate('connections_connection_configuration')} tiny>
-                    <Container gap>
-                      <RadioGroup name="configurationType" state={config}>
-                        {driverConfiguration.map(conf => (
-                          <Radio
-                            key={conf.value}
-                            id={conf.value}
-                            value={conf.value}
-                            mod={['primary', 'small']}
-                            readOnly={readonly || configurationTypes.length < 2}
-                            disabled={readonly}
-                            keepSize
-                          >
-                            {conf.name}
-                          </Radio>
-                        ))}
-                      </RadioGroup>
-                    </Container>
-                  </FormFieldDescription>
-                </>
+                <FormFieldDescription label={translate('connections_connection_configuration')} tiny>
+                  <Container gap>
+                    <RadioGroup name="configurationType" state={config}>
+                      {configurationTypes.map(conf => (
+                        <Radio
+                          key={conf.value}
+                          id={conf.value}
+                          value={conf.value}
+                          mod={['primary', 'small']}
+                          readOnly={readonly || configurationTypes.length < 2}
+                          disabled={readonly}
+                          keepSize
+                        >
+                          {conf.name}
+                        </Radio>
+                      ))}
+                    </RadioGroup>
+                  </Container>
+                </FormFieldDescription>
               )}
             </Container>
-            {isURLConfiguration ? (
+            {config.configurationType === DriverConfigurationType.Url && (
               <InputField
                 type="text"
                 name="url"
                 state={config}
-                disabled={disabled}
-                readOnly={readonly}
+                readOnly={readonly || disabled}
                 autoComplete={`section-${config.driverId || 'driver'} section-jdbc`}
               >
-                {translate('customConnection_url_JDBC')}
+                {translate('plugin_connections_connection_form_part_main_url_jdbc')}
               </InputField>
-            ) : (
-              <ParametersForm
-                config={config}
-                embedded={driver?.embedded}
-                requiresServerName={driver?.requiresServerName}
-                disabled={disabled}
-                readOnly={readonly}
-                originLocal={originLocal}
-              />
             )}
+
+            {config.configurationType === DriverConfigurationType.Manual &&
+              (driver?.useCustomPage ? (
+                <ObjectPropertyInfoForm
+                  state={config.mainPropertyValues}
+                  properties={driver.mainProperties ?? EMPTY_ARRAY}
+                  disabled={disabled}
+                  readOnly={readonly}
+                />
+              ) : (
+                <ParametersForm
+                  config={config}
+                  embedded={driver?.embedded}
+                  requiresServerName={driver?.requiresServerName}
+                  disabled={disabled}
+                  readOnly={readonly}
+                  originLocal={originLocal}
+                />
+              ))}
           </Group>
           <Group form gap>
             <Container wrap gap>
-              <InputField type="text" name="name" minLength={1} state={config} disabled={disabled} readOnly={readonly} required fill>
+              <InputField type="text" name="name" minLength={1} state={config} readOnly={readonly || disabled} required fill>
                 {translate('connections_connection_name')}
               </InputField>
               {!config.template && (
@@ -262,18 +276,17 @@ export const Options: TabContainerPanelComponent<IConnectionFormProps> = observe
                   type="text"
                   name="folder"
                   state={config}
-                  disabled={disabled}
                   autoComplete={`section-${config.driverId || 'driver'} section-folder`}
                   autoHide
                   readOnly
                   tiny
                   fill
                 >
-                  {translate('customConnection_folder')}
+                  {translate('plugin_connections_connection_form_part_main_folder')}
                 </InputField>
               )}
             </Container>
-            <Textarea name="description" rows={3} state={config} disabled={disabled} readOnly={readonly}>
+            <Textarea name="description" rows={3} state={config} readOnly={readonly || disabled}>
               {translate('connections_connection_description')}
             </Textarea>
           </Group>
@@ -282,7 +295,7 @@ export const Options: TabContainerPanelComponent<IConnectionFormProps> = observe
           {!driver?.anonymousAccess && (authentication.authorized || !edit) && (
             <Group form gap>
               <GroupTitle>{translate('connections_connection_edit_authentication')}</GroupTitle>
-              {serverConfigResource.resource.distributed && connectionOptionsTabService.isProjectShared(state) && (
+              {serverConfigResource.resource.distributed && isSharedProject && (
                 <FieldCheckbox
                   id={config.connectionId + 'isShared'}
                   name="sharedCredentials"
@@ -328,9 +341,18 @@ export const Options: TabContainerPanelComponent<IConnectionFormProps> = observe
                   state={config}
                   disabled={disabled || readonly || config.sharedCredentials}
                   mod={['primary']}
+                  title={translate(
+                    !isSharedProject || serverConfigResource.data?.distributed
+                      ? 'connections_connection_authentication_save_credentials_for_user_tooltip'
+                      : 'connections_connection_edit_save_credentials_shared_tooltip',
+                  )}
                   keepSize
                 >
-                  {translate('connections_connection_edit_save_credentials')}
+                  {translate(
+                    !isSharedProject || serverConfigResource.data?.distributed
+                      ? 'connections_connection_authentication_save_credentials_for_user'
+                      : 'connections_connection_edit_save_credentials_shared',
+                  )}
                 </FieldCheckbox>
               )}
             </Group>
@@ -338,6 +360,8 @@ export const Options: TabContainerPanelComponent<IConnectionFormProps> = observe
           {driver?.providerProperties && (
             <ProviderPropertiesForm config={config} properties={driver.providerProperties} disabled={disabled} readonly={readonly} />
           )}
+
+          <AdvancedPropertiesForm config={config} disabled={disabled} readonly={readonly} />
         </Container>
       </ColoredContainer>
     </Form>

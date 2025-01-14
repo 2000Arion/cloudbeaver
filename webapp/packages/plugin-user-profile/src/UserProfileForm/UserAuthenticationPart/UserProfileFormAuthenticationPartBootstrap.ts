@@ -5,27 +5,30 @@
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
  */
+import { UserInfoResource } from '@cloudbeaver/core-authentication';
 import { importLazyComponent } from '@cloudbeaver/core-blocks';
 import { Bootstrap, injectable } from '@cloudbeaver/core-di';
 
-import { UserProfileFormService } from '../UserProfileFormService';
-import { DATA_CONTEXT_USER_PROFILE_FORM_AUTHENTICATION_PART } from './DATA_CONTEXT_USER_PROFILE_FORM_AUTHENTICATION_PART';
+import { UserProfileTabsService } from '../../UserProfileTabsService.js';
 
-const AuthenticationPanel = importLazyComponent(() => import('./AuthenticationPanel').then(m => m.AuthenticationPanel));
+const ChangePassword = importLazyComponent(() => import('./ChangePassword.js').then(m => m.ChangePassword));
 
 @injectable()
 export class UserProfileFormAuthenticationPartBootstrap extends Bootstrap {
-  constructor(private readonly userProfileFormService: UserProfileFormService) {
+  constructor(
+    private readonly userProfileTabsService: UserProfileTabsService,
+    private readonly userInfoResource: UserInfoResource,
+  ) {
     super();
   }
 
-  register(): void {
-    this.userProfileFormService.parts.add({
+  override register(): void {
+    this.userProfileTabsService.tabContainer.add({
       key: 'authentication',
       name: 'ui_authentication',
-      order: 2,
-      panel: () => AuthenticationPanel,
-      stateGetter: props => () => props.formState.dataContext.get(DATA_CONTEXT_USER_PROFILE_FORM_AUTHENTICATION_PART),
+      order: 4,
+      isHidden: () => this.userInfoResource.isAnonymous(),
+      panel: () => ChangePassword,
     });
   }
 }

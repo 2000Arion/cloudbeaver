@@ -7,10 +7,10 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { Icon } from '../Icon';
-import { s } from '../s';
-import { useS } from '../useS';
-import style from './SlideOverlay.m.css';
+import { Icon } from '../Icon.js';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import style from './SlideOverlay.module.css';
 
 interface Props {
   className?: string;

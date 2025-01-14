@@ -7,12 +7,12 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { ActionIconButton } from '../../ActionIconButton';
-import { IconOrImage } from '../../IconOrImage';
-import { useTranslate } from '../../localization/useTranslate';
-import { s } from '../../s';
-import { useS } from '../../useS';
-import styles from './CommonDialogHeader.m.css';
+import { ActionIconButton } from '../../ActionIconButton.js';
+import { IconOrImage } from '../../IconOrImage.js';
+import { useTranslate } from '../../localization/useTranslate.js';
+import { s } from '../../s.js';
+import { useS } from '../../useS.js';
+import styles from './CommonDialogHeader.module.css';
 
 interface Props {
   title?: string;

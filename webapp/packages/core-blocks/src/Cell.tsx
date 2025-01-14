@@ -7,10 +7,10 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import style from './Cell.m.css';
-import { Container } from './Containers/Container';
-import { s } from './s';
-import { useS } from './useS';
+import style from './Cell.module.css';
+import { Container } from './Containers/Container.js';
+import { s } from './s.js';
+import { useS } from './useS.js';
 
 interface Props {
   description?: React.ReactElement | string;

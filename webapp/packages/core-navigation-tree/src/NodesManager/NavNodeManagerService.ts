@@ -9,19 +9,26 @@ import { action } from 'mobx';
 
 import type { IDataContextProvider } from '@cloudbeaver/core-data-context';
 import { Bootstrap, injectable } from '@cloudbeaver/core-di';
-import { Executor, IExecutionContextProvider, IExecutor, ISyncContextLoader, ISyncExecutor, SyncExecutor } from '@cloudbeaver/core-executor';
+import {
+  Executor,
+  type IExecutionContextProvider,
+  type IExecutor,
+  type ISyncContextLoader,
+  type ISyncExecutor,
+  SyncExecutor,
+} from '@cloudbeaver/core-executor';
 import { resourceKeyList, ResourceKeyUtils } from '@cloudbeaver/core-resource';
 import { NavigationService } from '@cloudbeaver/core-ui';
 import { MetadataMap } from '@cloudbeaver/core-utils';
 
-import { ENodeFeature } from './ENodeFeature';
-import type { NavNode, NavNodeInfo } from './EntityTypes';
-import { EObjectFeature } from './EObjectFeature';
-import { NavNodeInfoResource, ROOT_NODE_PATH } from './NavNodeInfoResource';
-import { navNodeMoveContext } from './navNodeMoveContext';
-import { NavTreeResource } from './NavTreeResource';
-import { NodeManagerUtils } from './NodeManagerUtils';
-import { ProjectsNavNodeService } from './ProjectsNavNodeService';
+import { ENodeFeature } from './ENodeFeature.js';
+import type { NavNode, NavNodeInfo } from './EntityTypes.js';
+import { EObjectFeature } from './EObjectFeature.js';
+import { NavNodeInfoResource, ROOT_NODE_PATH } from './NavNodeInfoResource.js';
+import { navNodeMoveContext } from './navNodeMoveContext.js';
+import { NavTreeResource } from './NavTreeResource.js';
+import { NodeManagerUtils } from './NodeManagerUtils.js';
+import { ProjectsNavNodeService } from './ProjectsNavNodeService.js';
 
 export interface NavNodeKey {
   nodeId: string;
@@ -137,10 +144,6 @@ export class NavNodeManagerService extends Bootstrap {
     );
   }
 
-  register(): void {}
-
-  load(): void {}
-
   getNavNodeCache(nodeId: string): INavNodeCache {
     return this.syncNodeInfoCache.get(nodeId);
   }
@@ -191,6 +194,10 @@ export class NavNodeManagerService extends Bootstrap {
     await this.navTree.refreshTree(navNodeId);
   }
 
+  async refreshNode(navNodeId: string): Promise<void> {
+    await this.navTree.refreshNode(navNodeId);
+  }
+
   getTree(navNodeId: string): string[] | undefined;
   getTree(navNodeKey: NavNodeKey): string[] | undefined;
   getTree(navNodeKey: NavNodeKey[]): Array<string[] | undefined>;
@@ -235,11 +242,11 @@ export class NavNodeManagerService extends Bootstrap {
     const items = await this.navNodeInfoResource.load(resourceKeyList(nodes.map(n => n.nodeId)));
 
     for (let i = 0; i < items.length; i++) {
-      items[i].parentId = nodes[i].parentId;
+      items[i]!.parentId = nodes[i]!.parentId;
     }
 
     if (nodes.length === 1) {
-      return this.getNode(nodes[0])!;
+      return this.getNode(nodes[0]!)!;
     }
 
     return this.getNode(nodes) as NavNode[];

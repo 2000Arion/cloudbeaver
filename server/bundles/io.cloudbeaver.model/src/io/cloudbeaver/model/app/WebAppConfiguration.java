@@ -17,32 +17,38 @@
 package io.cloudbeaver.model.app;
 
 import org.jkiss.code.NotNull;
+import org.jkiss.dbeaver.model.navigator.DBNBrowseSettings;
+import org.jkiss.dbeaver.registry.DataSourceNavigatorSettings;
 
 import java.util.Map;
 
 /**
  * Application configuration
  */
-public interface WebAppConfiguration {
-    String getAnonymousUserTeam();
+public interface WebAppConfiguration extends ServletAppConfiguration {
+    DataSourceNavigatorSettings.Preset PRESET_WEB = new DataSourceNavigatorSettings.Preset("web",
+        "Web",
+        "Default view");
 
-    boolean isAnonymousAccessEnabled();
+    DBNBrowseSettings getDefaultNavigatorSettings();
 
-    <T> T getResourceQuota(String quotaId);
+    boolean isPublicCredentialsSaveEnabled();
 
-    String getDefaultUserTeam();
+    boolean isAdminCredentialsSaveEnabled();
 
-    <T> T getPluginOption(@NotNull String pluginId, @NotNull String option);
-
-    Map<String, Object> getPluginConfig(@NotNull String pluginId, boolean create);
-
-    boolean isResourceManagerEnabled();
-
-    boolean isFeaturesEnabled(String[] requiredFeatures);
-
-    boolean isFeatureEnabled(String id);
-
-    default boolean isSupportsCustomConnections() {
-        return true;
+    default String[] getDisabledBetaFeatures() {
+        return new String[0];
     }
+
+    default String[] getEnabledAuthProviders() {
+        return new String[0];
+    }
+
+    @NotNull
+    String[] getEnabledDrivers();
+
+    @NotNull
+    String[] getDisabledDrivers();
+
+    Map<String, Object> getResourceQuotas();
 }

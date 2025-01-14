@@ -2,15 +2,12 @@ mutation createConnectionFromTemplate(
   $projectId: ID!
   $templateId: ID!
   $connectionName: String!
-  $includeOrigin: Boolean!
-  $customIncludeOriginDetails: Boolean!
   $includeAuthProperties: Boolean!
   $includeNetworkHandlersConfig: Boolean!
   $includeCredentialsSaved: Boolean!
   $includeAuthNeeded: Boolean!
   $includeProperties: Boolean!
   $includeProviderProperties: Boolean!
-  $includeSharedSecrets: Boolean!
   $customIncludeOptions: Boolean!
 ) {
   connection: createConnectionFromTemplate(projectId: $projectId, templateId: $templateId, connectionName: $connectionName) {

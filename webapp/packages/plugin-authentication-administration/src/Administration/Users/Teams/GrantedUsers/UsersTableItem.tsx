@@ -9,7 +9,7 @@ import { observer } from 'mobx-react-lite';
 
 import { StaticImage, TableColumnValue, TableItem, TableItemSelect } from '@cloudbeaver/core-blocks';
 
-import style from './GrantedUsersTableItem.m.css';
+import style from './GrantedUsersTableItem.module.css';
 
 interface Props {
   id: any;
@@ -28,7 +28,7 @@ export const UsersTableItem = observer<Props>(function UsersTableItem({ id, name
         <TableItemSelect disabled={disabled} />
       </TableColumnValue>
       <TableColumnValue>
-        <StaticImage className={style.staticImage} icon={icon} title={iconTooltip} />
+        <StaticImage className={style['staticImage']} icon={icon} title={iconTooltip} />
       </TableColumnValue>
       <TableColumnValue>{name}</TableColumnValue>
     </TableItem>

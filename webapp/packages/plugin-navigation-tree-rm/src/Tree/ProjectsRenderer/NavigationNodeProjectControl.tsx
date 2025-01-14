@@ -13,20 +13,20 @@ import { useService } from '@cloudbeaver/core-di';
 import { EventContext, EventStopPropagationFlag } from '@cloudbeaver/core-events';
 import { NavNodeInfoResource } from '@cloudbeaver/core-navigation-tree';
 import { ProjectInfoResource } from '@cloudbeaver/core-projects';
-import { NAV_NODE_TYPE_RM_PROJECT } from '@cloudbeaver/core-resource-manager';
+import { isRMProjectNode } from '@cloudbeaver/core-resource-manager';
 import { CaptureViewContext } from '@cloudbeaver/core-view';
 import {
   ElementsTreeContext,
   isDraggingInsideProject,
-  NavTreeControlComponent,
-  NavTreeControlProps,
+  type NavTreeControlComponent,
+  type NavTreeControlProps,
   TreeNodeMenuLoader,
 } from '@cloudbeaver/plugin-navigation-tree';
 import { ResourceManagerService } from '@cloudbeaver/plugin-resource-manager';
 
-import { getRmProjectNodeId } from '../../NavNodes/getRmProjectNodeId';
-import { DATA_CONTEXT_RESOURCE_MANAGER_TREE_RESOURCE_TYPE_ID } from '../DATA_CONTEXT_RESOURCE_MANAGER_TREE_RESOURCE_TYPE_ID';
-import style from './NavigationNodeProjectControl.m.css';
+import { getRmProjectNodeId } from '../../NavNodes/getRmProjectNodeId.js';
+import { DATA_CONTEXT_RESOURCE_MANAGER_TREE_RESOURCE_TYPE_ID } from '../DATA_CONTEXT_RESOURCE_MANAGER_TREE_RESOURCE_TYPE_ID.js';
+import style from './NavigationNodeProjectControl.module.css';
 
 export const NavigationNodeProjectControl: NavTreeControlComponent = observer<NavTreeControlProps, HTMLDivElement>(
   forwardRef(function NavigationNodeProjectControl({ node, dndElement, dndPlaceholder, className }, ref) {
@@ -42,7 +42,7 @@ export const NavigationNodeProjectControl: NavTreeControlComponent = observer<Na
 
     const outdated = getComputed(() => navNodeInfoResource.isOutdated(node.id) && !treeNodeContext.loading);
     const selected = treeNodeContext.selected;
-    const resourceType = viewContext?.tryGet(DATA_CONTEXT_RESOURCE_MANAGER_TREE_RESOURCE_TYPE_ID);
+    const resourceType = viewContext?.get(DATA_CONTEXT_RESOURCE_MANAGER_TREE_RESOURCE_TYPE_ID);
 
     const isDragging = getComputed(() => {
       if (!node.projectId || !elementsTreeContext?.tree.activeDnDData) {
@@ -69,7 +69,7 @@ export const NavigationNodeProjectControl: NavTreeControlComponent = observer<Na
     }
 
     if (node.projectId && resourceType !== undefined) {
-      if (node.nodeType === NAV_NODE_TYPE_RM_PROJECT) {
+      if (isRMProjectNode(node)) {
         const project = projectInfoResource.get(node.projectId);
         if (project) {
           const resourceFolder = resourceManagerService.getRootFolder(project, resourceType);

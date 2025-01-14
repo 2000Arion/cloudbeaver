@@ -7,10 +7,10 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { IconOrImage } from '../IconOrImage';
-import { useS } from '../useS';
-import { s } from '../s';
-import style from './Tags.m.css';
+import { IconOrImage } from '../IconOrImage.js';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import style from './Tags.module.css';
 
 export interface ITag<T extends string | number = string> {
   id: T;

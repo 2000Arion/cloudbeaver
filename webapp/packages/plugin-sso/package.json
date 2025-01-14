@@ -1,5 +1,6 @@
 {
   "name": "@cloudbeaver/plugin-sso",
+  "type": "module",
   "sideEffects": [
     "src/**/*.css",
     "src/**/*.scss",
@@ -13,15 +14,14 @@
     "build": "tsc -b",
     "clean": "rimraf --glob dist",
     "lint": "eslint ./src/ --ext .ts,.tsx",
-    "lint-fix": "eslint ./src/ --ext .ts,.tsx --fix",
     "validate-dependencies": "core-cli-validate-dependencies",
     "update-ts-references": "yarn run clean && typescript-resolve-references"
   },
   "peerDependencies": {},
   "dependencies": {
-    "@cloudbeaver/core-di": "~0.1.0"
+    "@cloudbeaver/core-di": "^0"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "typescript": "^5"
   }
 }

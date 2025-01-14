@@ -9,35 +9,48 @@ import { observer } from 'mobx-react-lite';
 
 import { ENotificationType } from '@cloudbeaver/core-events';
 
-import { IconOrImage } from './IconOrImage';
-import { Link } from './Link';
-import { useTranslate } from './localization/useTranslate';
-import { s } from './s';
-import style from './StatusMessage.m.css';
-import { useErrorDetails } from './useErrorDetails';
-import { useS } from './useS';
+import { IconOrImage } from './IconOrImage.js';
+import { Link } from './Link.js';
+import { useTranslate } from './localization/useTranslate.js';
+import { s } from './s.js';
+import style from './StatusMessage.module.css';
+import { useErrorDetails } from './useErrorDetails.js';
+import { useS } from './useS.js';
 
 interface Props {
   message?: string | string[] | null;
   type?: ENotificationType | null;
   exception?: Error | null;
   className?: string;
+  multipleRows?: boolean;
   onShowDetails?: () => void;
 }
 
-export const StatusMessage = observer<Props>(function StatusMessage({ type, message, exception = null, className, onShowDetails }) {
+export const StatusMessage = observer<Props>(function StatusMessage({
+  type,
+  multipleRows = false,
+  message,
+  exception = null,
+  className,
+  onShowDetails,
+}) {
   const styles = useS(style);
   const translate = useTranslate();
   const errorDetails = useErrorDetails(exception);
   const isError = type === ENotificationType.Error || exception !== null;
 
-  if (Array.isArray(message)) {
-    message = message.map(m => translate(m)).join(', ');
-  } else if (message !== null) {
-    message = translate(message);
+  function translateMessage(message: string | string[] | null | undefined) {
+    if (Array.isArray(message)) {
+      message = message.map(m => translate(m)).join(', ');
+    } else if (message !== null) {
+      message = translate(message);
+    }
+
+    return message;
   }
 
-  message = message ?? errorDetails.message;
+  message = translateMessage(message) || translateMessage(errorDetails.message);
+
   let icon = '/icons/info_icon.svg';
 
   if (isError) {
@@ -51,13 +64,13 @@ export const StatusMessage = observer<Props>(function StatusMessage({ type, mess
   }
 
   return (
-    <div className={s(styles, { statusMessage: true }, className)}>
+    <div className={s(styles, { statusMessage: true, statusMessageExtended: !multipleRows }, className)}>
       {message && (
         <>
           <IconOrImage className={s(styles, { iconOrImage: true })} icon={icon} />
-          <div className={s(styles, { message: true })} title={message}>
+          <div className={s(styles, { message: !multipleRows })} title={message}>
             {onShowDetails ? (
-              <Link className={s(styles, { link: true })} onClick={onShowDetails}>
+              <Link className={s(styles, { link: !multipleRows })} onClick={onShowDetails}>
                 {message}
               </Link>
             ) : (

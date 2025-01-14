@@ -5,60 +5,57 @@
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
  */
+import { observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { useContext, useState } from 'react';
 
 import { s, useS, useTranslate } from '@cloudbeaver/core-blocks';
-import { useDataContext } from '@cloudbeaver/core-data-context';
-import { useTabLocalState } from '@cloudbeaver/core-ui';
-import { CaptureViewContext } from '@cloudbeaver/core-view';
-import { DataPresentationComponent, IDatabaseResultSet, TableViewerLoader } from '@cloudbeaver/plugin-data-viewer';
+import { CaptureViewScope } from '@cloudbeaver/core-view';
+import { DatabaseMetadataAction, type DataPresentationComponent, isResultSetDataModel, TableViewerLoader } from '@cloudbeaver/plugin-data-viewer';
 
-import { DATA_CONTEXT_DV_DDM_RS_GROUPING } from './DataContext/DATA_CONTEXT_DV_DDM_RS_GROUPING';
-import { DEFAULT_GROUPING_QUERY_OPERATION } from './DEFAULT_GROUPING_QUERY_OPERATION';
-import styles from './DVResultSetGroupingPresentation.m.css';
-import type { IGroupingQueryState } from './IGroupingQueryState';
-import { useGroupingData } from './useGroupingData';
-import { useGroupingDataModel } from './useGroupingDataModel';
-import { useGroupingDnDColumns } from './useGroupingDnDColumns';
+import { DEFAULT_GROUPING_QUERY_OPERATION } from './DEFAULT_GROUPING_QUERY_OPERATION.js';
+import styles from './DVResultSetGroupingPresentation.module.css';
+import { DVResultSetGroupingPresentationContext } from './DVResultSetGroupingPresentationContext.js';
+import type { IDVResultSetGroupingPresentationState } from './IDVResultSetGroupingPresentationState.js';
+import { useGroupingDataModel } from './useGroupingDataModel.js';
+import { useGroupingDnDColumns } from './useGroupingDnDColumns.js';
 
-export interface IDVResultSetGroupingPresentationState extends IGroupingQueryState {
-  presentationId: string;
-}
-
-export const DVResultSetGroupingPresentation: DataPresentationComponent<any, IDatabaseResultSet> = observer(function DVResultSetGroupingPresentation({
-  model: originalModel,
+export const DVResultSetGroupingPresentation: DataPresentationComponent = observer(function DVResultSetGroupingPresentation({
+  model: unknownModel,
   resultIndex,
 }) {
-  const state = useTabLocalState<IDVResultSetGroupingPresentationState>(() => ({
-    presentationId: '',
-    columns: [],
-    functions: [DEFAULT_GROUPING_QUERY_OPERATION],
-    showDuplicatesOnly: false,
-  }));
+  const originalModel = unknownModel as any;
+  if (!isResultSetDataModel(originalModel)) {
+    throw new Error('DVResultSetGroupingPresentation can only be used with ResultSetDataSource');
+  }
+  const metadataAction = originalModel.source.getAction(resultIndex, DatabaseMetadataAction);
+
+  const state = metadataAction.get<IDVResultSetGroupingPresentationState>(`grouping-panel-${originalModel.id}`, () =>
+    observable({
+      presentationId: '',
+      valuePresentationId: null,
+      columns: [],
+      functions: [DEFAULT_GROUPING_QUERY_OPERATION],
+      showDuplicatesOnly: false,
+      modelId: '',
+    }),
+  );
+
   const style = useS(styles);
 
-  const viewContext = useContext(CaptureViewContext);
-  const context = useDataContext(viewContext);
   const translate = useTranslate();
-  const [presentationId, setPresentation] = useState('');
-  const [valuePresentationId, setValuePresentation] = useState<string | null>(null);
   const model = useGroupingDataModel(originalModel, resultIndex, state);
   const dnd = useGroupingDnDColumns(state, originalModel, model);
 
-  const grouping = useGroupingData(state);
-
-  context.set(DATA_CONTEXT_DV_DDM_RS_GROUPING, grouping);
-
   return (
-    <>
+    <CaptureViewScope>
+      <DVResultSetGroupingPresentationContext state={state} />
       <div
         ref={dnd.dndThrowBox.setRef}
         className={s(style, {
           throwBox: true,
           showDropOutside: dnd.dndThrowBox.state.canDrop,
           active: dnd.dndThrowBox.state.canDrop,
-          over: dnd.dndThrowBox.state.isOver,
+          over: dnd.dndThrowBox.state.isOver, // todo: this style doesn't exist
         })}
       />
       <div
@@ -77,15 +74,18 @@ export const DVResultSetGroupingPresentation: DataPresentationComponent<any, IDa
           <TableViewerLoader
             tableId={model.model.id}
             resultIndex={resultIndex}
-            presentationId={presentationId}
-            valuePresentationId={valuePresentationId}
-            context={context}
+            presentationId={state.presentationId}
+            valuePresentationId={state.valuePresentationId}
             simple
-            onPresentationChange={setPresentation}
-            onValuePresentationChange={setValuePresentation}
+            onPresentationChange={presentationId => {
+              state.presentationId = presentationId;
+            }}
+            onValuePresentationChange={presentationId => {
+              state.valuePresentationId = presentationId;
+            }}
           />
         )}
       </div>
-    </>
+    </CaptureViewScope>
   );
 });

@@ -16,7 +16,7 @@ import {
   ENodeFeature,
   getNodePlainName,
   type INodeActions,
-  NAV_NODE_TYPE_FOLDER,
+  isConnectionFolder,
   type NavNode,
   NavNodeInfoResource,
   NavNodeManagerService,
@@ -37,7 +37,8 @@ import {
   MenuService,
 } from '@cloudbeaver/core-view';
 
-import { DATA_CONTEXT_NAV_NODE_ACTIONS } from '../NavigationTree/ElementsTree/NavigationTreeNode/TreeNodeMenu/DATA_CONTEXT_NAV_NODE_ACTIONS';
+import { DATA_CONTEXT_NAV_NODE_ACTIONS } from '../NavigationTree/ElementsTree/NavigationTreeNode/TreeNodeMenu/DATA_CONTEXT_NAV_NODE_ACTIONS.js';
+import { MENU_NAVIGATION_TREE_CREATE } from '../NavigationTree/ElementsTree/NavigationTreeNode/TreeNodeMenu/MENU_NAVIGATION_TREE_CREATE.js';
 
 export interface INodeMenuData {
   node: NavNode;
@@ -60,7 +61,7 @@ export class NavNodeContextMenuService extends Bootstrap {
     super();
   }
 
-  register(): void {
+  override register(): void {
     this.navTreeResource.beforeNodeDelete.addPostHandler(async (data, contexts) => {
       if (ExecutorInterrupter.isInterrupted(contexts)) {
         return;
@@ -96,14 +97,11 @@ export class NavNodeContextMenuService extends Bootstrap {
 
     this.actionService.addHandler({
       id: 'nav-node-base-handler',
+      contexts: [DATA_CONTEXT_NAV_NODE],
       isActionApplicable: (context, action): boolean => {
-        const node = context.tryGet(DATA_CONTEXT_NAV_NODE);
+        const node = context.get(DATA_CONTEXT_NAV_NODE)!;
 
-        if (!node) {
-          return false;
-        }
-
-        if (NodeManagerUtils.isDatabaseObject(node.id) || node.nodeType === NAV_NODE_TYPE_FOLDER) {
+        if (NodeManagerUtils.isDatabaseObject(node.id) || isConnectionFolder(node)) {
           if (action === ACTION_RENAME) {
             return node.features?.includes(ENodeFeature.canRename) ?? false;
           }
@@ -120,7 +118,7 @@ export class NavNodeContextMenuService extends Bootstrap {
         return [ACTION_OPEN, ACTION_REFRESH].includes(action);
       },
       handler: async (context, action) => {
-        const node = context.get(DATA_CONTEXT_NAV_NODE);
+        const node = context.get(DATA_CONTEXT_NAV_NODE)!;
         const name = getNodePlainName(node);
 
         switch (action) {
@@ -137,7 +135,7 @@ export class NavNodeContextMenuService extends Bootstrap {
             break;
           }
           case ACTION_RENAME: {
-            const actions = context.tryGet(DATA_CONTEXT_NAV_NODE_ACTIONS);
+            const actions = context.get(DATA_CONTEXT_NAV_NODE_ACTIONS);
 
             const save = async (newName: string) => {
               if (name !== newName && newName.trim().length) {
@@ -183,11 +181,16 @@ export class NavNodeContextMenuService extends Bootstrap {
       },
     });
 
+    this.menuService.setHandler({
+      id: 'menu-navigation-tree-create',
+      menus: [MENU_NAVIGATION_TREE_CREATE],
+    });
+
     this.menuService.addCreator({
       root: true,
       contexts: [DATA_CONTEXT_NAV_NODE],
       getItems: (context, items) => {
-        items = [ACTION_OPEN, ACTION_REFRESH, ...items];
+        items = [MENU_NAVIGATION_TREE_CREATE, ACTION_OPEN, ACTION_REFRESH, ...items];
 
         if (this.navTreeSettingsService.editing) {
           items.push(ACTION_RENAME);
