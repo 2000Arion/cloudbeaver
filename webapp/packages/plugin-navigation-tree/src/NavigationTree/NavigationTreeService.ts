@@ -11,28 +11,39 @@ import {
   ConnectionInfoResource,
   ConnectionsManagerService,
   createConnectionParam,
-  IConnectionInfoParams,
+  type IConnectionInfoParams,
   NavNodeExtensionsService,
 } from '@cloudbeaver/core-connections';
 import { injectable } from '@cloudbeaver/core-di';
-import { ISyncExecutor, SyncExecutor } from '@cloudbeaver/core-executor';
+import { Executor, type IExecutor, type ISyncExecutor, SyncExecutor } from '@cloudbeaver/core-executor';
 import { EObjectFeature, NavNodeInfoResource, NavNodeManagerService, NavTreeResource, ROOT_NODE_PATH } from '@cloudbeaver/core-navigation-tree';
-import { CACHED_RESOURCE_DEFAULT_PAGE_OFFSET, CachedResourceOffsetPageKey, ResourceKey, resourceKeyList } from '@cloudbeaver/core-resource';
+import {
+  CACHED_RESOURCE_DEFAULT_PAGE_OFFSET,
+  CachedResourceOffsetPageKey,
+  CachedResourceOffsetPageTargetKey,
+  type ResourceKey,
+  resourceKeyList,
+} from '@cloudbeaver/core-resource';
 import { MetadataMap } from '@cloudbeaver/core-utils';
-import { ACTION_COLLAPSE_ALL, ACTION_FILTER, IActiveView, View } from '@cloudbeaver/core-view';
+import { ACTION_COLLAPSE_ALL, ACTION_FILTER, type IActiveView, View } from '@cloudbeaver/core-view';
 
-import { ACTION_LINK_OBJECT } from './ElementsTree/ACTION_LINK_OBJECT';
-import type { ITreeNodeState } from './ElementsTree/useElementsTree';
+import type { ITreeNodeState } from './ElementsTree/useElementsTree.js';
 
 export interface INavigationNodeSelectionData {
   id: ResourceKey<string>;
   selected: boolean[];
 }
 
+interface INavigationNodeShowData {
+  id: string;
+  path: string[];
+}
+
 @injectable()
 export class NavigationTreeService extends View<string> {
   readonly treeState: MetadataMap<string, ITreeNodeState>;
   readonly nodeSelectionTask: ISyncExecutor<INavigationNodeSelectionData>;
+  readonly showNodeExecutor: IExecutor<INavigationNodeShowData>;
 
   constructor(
     private readonly navNodeManagerService: NavNodeManagerService,
@@ -51,10 +62,11 @@ export class NavigationTreeService extends View<string> {
     }));
 
     this.nodeSelectionTask = new SyncExecutor();
+    this.showNodeExecutor = new Executor();
     this.getView = this.getView.bind(this);
     this.getChildren = this.getChildren.bind(this);
     this.loadNestedNodes = this.loadNestedNodes.bind(this);
-    this.registerAction(ACTION_FILTER, ACTION_COLLAPSE_ALL, ACTION_LINK_OBJECT);
+    this.registerAction(ACTION_FILTER, ACTION_COLLAPSE_ALL);
 
     makeObservable<NavigationTreeService, 'unselectAll'>(this, {
       selectNode: action,
@@ -68,6 +80,10 @@ export class NavigationTreeService extends View<string> {
 
   async navToNode(id: string, parentId?: string): Promise<void> {
     await this.navNodeManagerService.navToNode(id, parentId);
+  }
+
+  async showNode(id: string, path: string[]): Promise<void> {
+    await this.showNodeExecutor.execute({ id, path });
   }
 
   async loadNestedNodes(id = ROOT_NODE_PATH, tryConnect?: boolean): Promise<boolean> {
@@ -105,7 +121,9 @@ export class NavigationTreeService extends View<string> {
     }
 
     await this.navTreeResource.load(
-      CachedResourceOffsetPageKey(CACHED_RESOURCE_DEFAULT_PAGE_OFFSET, this.navTreeResource.childrenLimit).setTarget(id),
+      CachedResourceOffsetPageKey(CACHED_RESOURCE_DEFAULT_PAGE_OFFSET, this.navTreeResource.childrenLimit).setParent(
+        CachedResourceOffsetPageTargetKey(id),
+      ),
     );
 
     return true;

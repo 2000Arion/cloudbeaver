@@ -7,12 +7,12 @@
  */
 import { forwardRef } from 'react';
 
-import { s } from '../s';
-import { useS } from '../useS';
-import style from './Container.m.css';
-import { filterContainerFakeProps, getContainerProps } from './filterContainerFakeProps';
-import type { IContainerProps } from './IContainerProps';
-import elementsSizeStyle from './shared/ElementsSize.m.css';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import style from './Container.module.css';
+import { filterContainerFakeProps, getContainerProps } from './filterContainerFakeProps.js';
+import type { IContainerProps } from './IContainerProps.js';
+import elementsSizeStyle from './shared/ElementsSize.module.css';
 
 interface Props {
   as?: 'div' | 'header' | 'footer' | 'section' | 'aside' | 'main' | 'nav';

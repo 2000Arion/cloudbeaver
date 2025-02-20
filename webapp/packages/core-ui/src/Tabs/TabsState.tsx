@@ -8,16 +8,16 @@
 import { action, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useMemo, useState } from 'react';
-import { useTabState } from 'reakit/Tab';
+import { useTabState } from 'reakit';
 
 import { useAutoLoad, useExecutor, useObjectRef, useObservableRef } from '@cloudbeaver/core-blocks';
 import { useDataContext } from '@cloudbeaver/core-data-context';
 import { Executor, ExecutorInterrupter } from '@cloudbeaver/core-executor';
-import { isDefined, isNotNullDefined, MetadataMap, MetadataValueGetter, schema } from '@cloudbeaver/core-utils';
+import { isDefined, isNotNullDefined, MetadataMap, type MetadataValueGetter, schema } from '@cloudbeaver/core-utils';
 
-import type { ITabData, ITabInfo, ITabsContainer } from './TabsContainer/ITabsContainer';
-import { ITabsContext, type TabDirection, TabsContext } from './TabsContext';
-import { TabsValidationProvider } from './TabsValidationProvider';
+import type { ITabData, ITabInfo, ITabsContainer } from './TabsContainer/ITabsContainer.js';
+import { type ITabsContext, type TabDirection, TabsContext } from './TabsContext.js';
+import { TabsValidationProvider } from './TabsValidationProvider.js';
 
 type ExtractContainerProps<T> = T extends void ? Record<string, any> : T;
 
@@ -251,29 +251,28 @@ export const TabsState = observer(function TabsState<T = Record<string, any>>({
     },
   );
 
+  let currentTabInfo: ITabInfo<T, unknown> | undefined;
   if (container) {
-    let currentTabInfo: ITabInfo<T, never> | undefined;
-
     if (state.selectedId) {
       currentTabInfo = value.getTabInfo(state.selectedId);
     }
-
-    useAutoLoad(
-      TabsState,
-      container
-        .getDisplayed(props)
-        .map(tab => tab.getLoader?.(context, props))
-        .filter(isDefined)
-        .flat(),
-    );
-
-    useAutoLoad(
-      TabsState,
-      [currentTabInfo?.getLoader?.(context, props) || []].flat().filter(loader => loader.lazy),
-      true,
-      true,
-    );
   }
+
+  useAutoLoad(
+    TabsState,
+    container?.tabInfoList
+      .map(tab => tab.getLoader?.(context, props))
+      .filter(isDefined)
+      .flat() || [],
+    !!container,
+  );
+
+  useAutoLoad(
+    TabsState,
+    [currentTabInfo?.getLoader?.(context, props) || []].flat().filter(loader => loader.lazy),
+    !!container,
+    true,
+  );
 
   return (
     <TabsContext.Provider value={value}>

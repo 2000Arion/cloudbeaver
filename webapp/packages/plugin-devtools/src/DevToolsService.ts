@@ -5,6 +5,7 @@
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
  */
+/// <reference types="vite/client" />
 import { makeObservable, observable } from 'mobx';
 
 import { injectable } from '@cloudbeaver/core-di';
@@ -13,8 +14,9 @@ import { StorageService } from '@cloudbeaver/core-storage';
 
 interface IDevToolsSettings {
   enabled: boolean;
-  distributed: boolean;
-  configuration: boolean;
+  override: boolean;
+  distributed: boolean | null;
+  configuration: boolean | null;
 }
 
 const DEVTOOLS = 'devtools';
@@ -25,12 +27,23 @@ export class DevToolsService {
     return this.settings.enabled;
   }
 
+  get isOverride(): boolean {
+    return this.settings.override;
+  }
+
   get isDistributed(): boolean {
-    return this.settings.distributed;
+    if (!this.isOverride) {
+      return this.serverConfigResource.data?.distributed ?? false;
+    }
+
+    return this.settings.distributed ?? this.serverConfigResource.data?.distributed ?? false;
   }
 
   get isConfiguration(): boolean {
-    return this.settings.configuration;
+    if (!this.isOverride) {
+      return this.serverConfigResource.data?.configurationMode ?? false;
+    }
+    return this.settings.configuration ?? this.serverConfigResource.data?.configurationMode ?? false;
   }
 
   private readonly settings: IDevToolsSettings;
@@ -53,6 +66,11 @@ export class DevToolsService {
     this.syncSettingsOverride();
   }
 
+  setOverride(override: boolean) {
+    this.settings.override = override;
+    this.syncSettingsOverride();
+  }
+
   setDistributedMode(distributed: boolean) {
     this.settings.distributed = distributed;
     this.syncSettingsOverride();
@@ -64,10 +82,14 @@ export class DevToolsService {
   }
 
   private syncSettingsOverride() {
-    if (this.isEnabled) {
+    if (this.isOverride && this.isEnabled) {
       if (this.serverConfigResource.data) {
-        this.serverConfigResource.data.distributed = this.isDistributed;
-        this.serverConfigResource.data.configurationMode = this.isConfiguration;
+        if (this.settings.distributed !== null) {
+          this.serverConfigResource.data.distributed = this.isDistributed;
+        }
+        if (this.settings.configuration !== null) {
+          this.serverConfigResource.data.configurationMode = this.isConfiguration;
+        }
       }
     }
   }
@@ -75,8 +97,9 @@ export class DevToolsService {
 
 function getDefaultDevToolsSettings(): IDevToolsSettings {
   return {
-    enabled: process.env.NODE_ENV === 'development',
-    distributed: false,
-    configuration: false,
+    enabled: import.meta.env.DEV,
+    override: false,
+    distributed: null,
+    configuration: null,
   };
 }

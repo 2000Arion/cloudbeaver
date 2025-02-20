@@ -12,25 +12,27 @@ import { useService } from '@cloudbeaver/core-di';
 import { NotificationService } from '@cloudbeaver/core-events';
 import { bytesToSize, isNotNullDefined } from '@cloudbeaver/core-utils';
 
-import type { IResultSetElementKey } from '../../DatabaseDataModel/Actions/ResultSet/IResultSetDataKey';
-import { isResultSetBlobValue } from '../../DatabaseDataModel/Actions/ResultSet/isResultSetBlobValue';
-import { isResultSetContentValue } from '../../DatabaseDataModel/Actions/ResultSet/isResultSetContentValue';
-import { useResultSetActions } from '../../DatabaseDataModel/Actions/ResultSet/useResultSetActions';
-import type { IDatabaseDataModel } from '../../DatabaseDataModel/IDatabaseDataModel';
-import type { IDatabaseResultSet } from '../../DatabaseDataModel/IDatabaseResultSet';
-import { QuotaPlaceholder } from '../QuotaPlaceholder';
-import { MAX_BLOB_PREVIEW_SIZE } from './MAX_BLOB_PREVIEW_SIZE';
+import type { IResultSetElementKey } from '../../DatabaseDataModel/Actions/ResultSet/IResultSetDataKey.js';
+import { isResultSetBlobValue } from '../../DatabaseDataModel/Actions/ResultSet/isResultSetBlobValue.js';
+import { isResultSetContentValue } from '../../DatabaseDataModel/Actions/ResultSet/isResultSetContentValue.js';
+import { ResultSetDataContentAction } from '../../DatabaseDataModel/Actions/ResultSet/ResultSetDataContentAction.js';
+import { ResultSetFormatAction } from '../../DatabaseDataModel/Actions/ResultSet/ResultSetFormatAction.js';
+import type { IDatabaseDataModel } from '../../DatabaseDataModel/IDatabaseDataModel.js';
+import { ResultSetDataSource } from '../../ResultSet/ResultSetDataSource.js';
+import { QuotaPlaceholder } from '../QuotaPlaceholder.js';
+import { MAX_BLOB_PREVIEW_SIZE } from './MAX_BLOB_PREVIEW_SIZE.js';
 
 interface Props {
   resultIndex: number;
-  model: IDatabaseDataModel<any, IDatabaseResultSet>;
+  model: IDatabaseDataModel<ResultSetDataSource>;
   elementKey: IResultSetElementKey;
 }
 
 export const TextValueTruncatedMessage = observer<Props>(function TextValueTruncatedMessage({ model, resultIndex, elementKey }) {
   const translate = useTranslate();
   const notificationService = useService(NotificationService);
-  const { contentAction, formatAction } = useResultSetActions({ model, resultIndex });
+  const contentAction = model.source.getAction(resultIndex, ResultSetDataContentAction);
+  const formatAction = model.source.getAction(resultIndex, ResultSetFormatAction);
   const contentValue = formatAction.get(elementKey);
   let isTruncated = contentAction.isTextTruncated(elementKey);
   const isCacheLoaded = !!contentAction.retrieveFullTextFromCache(elementKey);
@@ -43,8 +45,8 @@ export const TextValueTruncatedMessage = observer<Props>(function TextValueTrunc
   if (!isTruncated || isCacheLoaded) {
     return null;
   }
-  const isTextColumn = formatAction.isText(elementKey);
 
+  const isTextColumn = formatAction.isText(elementKey);
   const valueSize =
     isResultSetContentValue(contentValue) && isNotNullDefined(contentValue.contentLength) ? bytesToSize(contentValue.contentLength) : undefined;
 

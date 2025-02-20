@@ -7,8 +7,8 @@
  */
 import { action, makeAutoObservable, observable } from 'mobx';
 
-import type { schema } from './schema';
-import { TempMap } from './TempMap';
+import type { schema } from './schema.js';
+import { TempMap } from './TempMap.js';
 
 export type MetadataValueGetter<TKey, TValue> = (key: TKey, metadata: MetadataMap<TKey, any>) => TValue;
 export type DefaultValueGetter<TKey, TValue> = (key: TKey, metadata: MetadataMap<TKey, TValue>) => TValue;
@@ -30,10 +30,11 @@ export class MetadataMap<TKey, TValue> implements Map<TKey, TValue> {
 
     makeAutoObservable(this, {
       sync: action,
+      unSync: action,
     });
   }
 
-  [Symbol.iterator](): IterableIterator<[TKey, TValue]> {
+  [Symbol.iterator](): ArrayIterator<[TKey, TValue]> {
     return this.temp[Symbol.iterator]();
   }
 
@@ -42,6 +43,10 @@ export class MetadataMap<TKey, TValue> implements Map<TKey, TValue> {
   }
 
   sync(entities: Array<[TKey, TValue]>): void {
+    if (this.syncData === entities) {
+      return;
+    }
+
     this.temp.clear();
     this.data.clear();
     for (const [key, value] of entities) {
@@ -50,19 +55,23 @@ export class MetadataMap<TKey, TValue> implements Map<TKey, TValue> {
     this.syncData = entities;
   }
 
+  unSync(): void {
+    this.syncData = null;
+  }
+
   forEach(callbackfn: (value: TValue, key: TKey, map: Map<TKey, TValue>) => void, thisArg?: any): void {
     this.temp.forEach(callbackfn, thisArg);
   }
 
-  entries(): IterableIterator<[TKey, TValue]> {
+  entries(): ArrayIterator<[TKey, TValue]> {
     return this.temp.entries();
   }
 
-  keys(): IterableIterator<TKey> {
+  keys(): ArrayIterator<TKey> {
     return this.temp.keys();
   }
 
-  values(): IterableIterator<TValue> {
+  values(): ArrayIterator<TValue> {
     return this.temp.values();
   }
 
@@ -75,6 +84,8 @@ export class MetadataMap<TKey, TValue> implements Map<TKey, TValue> {
     return this;
   }
 
+  // TODO replace zod schema with just validation callback returning true/false.
+  // In case we use something else than zod
   get(key: TKey, defaultValue?: DefaultValueGetter<TKey, TValue>, schema?: schema.AnyZodObject): TValue {
     const value = this.temp.get(key);
     let invalidate = !this.temp.has(key);
@@ -95,7 +106,9 @@ export class MetadataMap<TKey, TValue> implements Map<TKey, TValue> {
       }
 
       const value = provider(key, this);
-      this.temp.set(key, observable(value as any));
+      const isNotPrimitiveValue = typeof value === 'object' && value !== null;
+
+      this.temp.set(key, isNotPrimitiveValue ? observable(value) : value);
     }
 
     return this.temp.get(key)!;

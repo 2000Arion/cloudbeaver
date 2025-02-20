@@ -8,14 +8,14 @@
 import { observer } from 'mobx-react-lite';
 import { useCallback, useContext } from 'react';
 
-import { filterLayoutFakeProps, getLayoutProps } from '../Containers/filterLayoutFakeProps';
-import type { ILayoutSizeProps } from '../Containers/ILayoutSizeProps';
-import { s } from '../s';
-import { useS } from '../useS';
-import { Field } from './Field';
-import { FormContext } from './FormContext';
-import style from './Radio.m.css';
-import { RadioGroupContext } from './RadioGroupContext';
+import { filterLayoutFakeProps, getLayoutProps } from '../Containers/filterLayoutFakeProps.js';
+import type { ILayoutSizeProps } from '../Containers/ILayoutSizeProps.js';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import { Field } from './Field.js';
+import { FormContext } from './FormContext.js';
+import style from './Radio.module.css';
+import { RadioGroupContext } from './RadioGroupContext.js';
 
 type BaseProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'checked'> &
   ILayoutSizeProps & {
@@ -39,8 +39,8 @@ type ObjectProps<TKey extends keyof TState, TState> = BaseProps & {
 };
 
 interface RadioType {
-  (props: ControlledProps): JSX.Element;
-  <TKey extends keyof TState, TState>(props: ObjectProps<TKey, TState>): JSX.Element;
+  (props: ControlledProps): React.JSX.Element;
+  <TKey extends keyof TState, TState>(props: ObjectProps<TKey, TState>): React.JSX.Element;
 }
 
 export const Radio: RadioType = observer(function Radio({

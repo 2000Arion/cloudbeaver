@@ -7,7 +7,7 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { AdministrationItemContentComponent, ConfigurationWizardService } from '@cloudbeaver/core-administration';
+import { type AdministrationItemContentComponent, ConfigurationWizardService } from '@cloudbeaver/core-administration';
 import {
   ColoredContainer,
   ConfirmationDialog,
@@ -16,130 +16,149 @@ import {
   Group,
   GroupItem,
   GroupTitle,
-  Loader,
   Placeholder,
   s,
   ToolsAction,
   ToolsPanel,
+  useAutoLoad,
   useFocus,
+  useForm,
   useFormValidator,
   useS,
   useTranslate,
 } from '@cloudbeaver/core-blocks';
 import { useService } from '@cloudbeaver/core-di';
 import { CommonDialogService, DialogueStateResult } from '@cloudbeaver/core-dialogs';
-import { ServerConfigResource } from '@cloudbeaver/core-root';
+import { NotificationService } from '@cloudbeaver/core-events';
+import { getFirstException } from '@cloudbeaver/core-utils';
 
-import { ServerConfigurationConfigurationForm } from './Form/ServerConfigurationConfigurationForm';
-import { ServerConfigurationFeaturesForm } from './Form/ServerConfigurationFeaturesForm';
-import { ServerConfigurationInfoForm } from './Form/ServerConfigurationInfoForm';
-import { ServerConfigurationNavigatorViewForm } from './Form/ServerConfigurationNavigatorViewForm';
-import { ServerConfigurationSecurityForm } from './Form/ServerConfigurationSecurityForm';
-import { ServerConfigurationDriversForm } from './ServerConfigurationDriversForm';
-import style from './ServerConfigurationPage.m.css';
-import { ServerConfigurationService } from './ServerConfigurationService';
+import { ServerConfigurationConfigurationForm } from './Form/ServerConfigurationConfigurationForm.js';
+import { ServerConfigurationFeaturesForm } from './Form/ServerConfigurationFeaturesForm.js';
+import { ServerConfigurationInfoForm } from './Form/ServerConfigurationInfoForm.js';
+import { ServerConfigurationNavigatorViewForm } from './Form/ServerConfigurationNavigatorViewForm.js';
+import { ServerConfigurationSecurityForm } from './Form/ServerConfigurationSecurityForm.js';
+import { getServerConfigurationFormPart } from './getServerConfigurationFormPart.js';
+import { ServerConfigurationDriversForm } from './ServerConfigurationDriversForm.js';
+import { ServerConfigurationFormStateManager } from './ServerConfigurationFormStateManager.js';
+import style from './ServerConfigurationPage.module.css';
+import { ServerConfigurationService } from './ServerConfigurationService.js';
 
 export const ServerConfigurationPage: AdministrationItemContentComponent = observer(function ServerConfigurationPage({ configurationWizard }) {
   const translate = useTranslate();
   const styles = useS(style);
-  const [focusedRef, state] = useFocus<HTMLFormElement>({ focusFirstChild: true });
-  const service = useService(ServerConfigurationService);
-  const serverConfigResource = useService(ServerConfigResource);
+  const [focusedRef, ref] = useFocus<HTMLFormElement>({ focusFirstChild: true });
+  const serverConfigurationService = useService(ServerConfigurationService);
   const commonDialogService = useService(CommonDialogService);
+  const notificationService = useService(NotificationService);
+  const serverConfigurationFormStateManager = useService(ServerConfigurationFormStateManager);
   const configurationWizardService = useService(ConfigurationWizardService);
-  const changed = serverConfigResource.isChanged() || serverConfigResource.isNavigatorSettingsChanged();
-  useFormValidator(service.validationTask, state.reference);
+
+  const formState = serverConfigurationFormStateManager.formState!;
+  const part = getServerConfigurationFormPart(formState);
+
+  useAutoLoad(ServerConfigurationPage, [part]);
+  useFormValidator(formState.validationTask, ref.reference);
 
   function handleChange() {
-    service.changed();
+    if (configurationWizard) {
+      serverConfigurationService.setDone(false);
+    }
 
-    if (!service.state.serverConfig.adminCredentialsSaveEnabled) {
-      service.state.serverConfig.publicCredentialsSaveEnabled = false;
+    if (!part.state.serverConfig.adminCredentialsSaveEnabled) {
+      part.state.serverConfig.publicCredentialsSaveEnabled = false;
     }
   }
 
-  function reset() {
-    service.loadConfig(true);
-  }
+  const changed = part.isChanged;
 
   async function save() {
     if (configurationWizard) {
-      await configurationWizardService.next();
-    } else {
-      if (serverConfigResource.isChanged()) {
-        const result = await commonDialogService.open(ConfirmationDialog, {
-          title: 'administration_server_configuration_save_confirmation_title',
-          message: 'administration_server_configuration_save_confirmation_message',
-        });
+      configurationWizardService.next();
+      return;
+    }
 
-        if (result === DialogueStateResult.Rejected) {
-          return;
-        }
+    if (changed) {
+      const result = await commonDialogService.open(ConfirmationDialog, {
+        title: 'administration_server_configuration_save_confirmation_title',
+        message: 'administration_server_configuration_save_confirmation_message',
+      });
+
+      if (result === DialogueStateResult.Rejected) {
+        return;
       }
-      await service.saveConfiguration(true);
+    }
+
+    const saved = await formState.save();
+
+    if (!saved) {
+      const error = getFirstException(part.exception);
+      if (error) {
+        notificationService.logException(error, 'administration_configuration_wizard_configuration_save_error');
+        return;
+      }
+
+      notificationService.logError({ title: 'administration_configuration_wizard_configuration_save_error' });
     }
   }
 
+  const form = useForm({
+    onSubmit: save,
+  });
+
   return (
-    <Form ref={focusedRef} name="server_config" contents onChange={handleChange}>
-      <ColoredContainer vertical wrap gap parent>
-        {!configurationWizard && (
-          <Group box keepSize>
-            <ToolsPanel rounded>
-              <ToolsAction
-                title={translate('administration_configuration_tools_save_tooltip')}
-                icon="admin-save"
-                viewBox="0 0 24 24"
-                disabled={!changed}
-                onClick={save}
-              >
-                {translate('ui_processing_save')}
-              </ToolsAction>
-              <ToolsAction
-                title={translate('administration_configuration_tools_cancel_tooltip')}
-                icon="admin-cancel"
-                viewBox="0 0 24 24"
-                disabled={!changed}
-                onClick={reset}
-              >
-                {translate('ui_processing_cancel')}
-              </ToolsAction>
-            </ToolsPanel>
+    <ColoredContainer vertical wrap gap parent>
+      {!configurationWizard && (
+        <Group box keepSize>
+          <ToolsPanel rounded>
+            <ToolsAction
+              title={translate('administration_configuration_tools_save_tooltip')}
+              icon="admin-save"
+              viewBox="0 0 24 24"
+              disabled={!changed}
+              onClick={() => form.submit()}
+            >
+              {translate('ui_processing_save')}
+            </ToolsAction>
+            <ToolsAction
+              title={translate('administration_configuration_tools_cancel_tooltip')}
+              icon="admin-cancel"
+              viewBox="0 0 24 24"
+              disabled={!changed}
+              onClick={() => formState.reset()}
+            >
+              {translate('ui_processing_cancel')}
+            </ToolsAction>
+          </ToolsPanel>
+        </Group>
+      )}
+
+      <Container overflow gap wrap>
+        {configurationWizard && (
+          <Group form>
+            <GroupItem>
+              <h3>{translate('administration_configuration_wizard_configuration_title')}</h3>
+            </GroupItem>
+            <GroupItem>
+              <p className={s(styles, { message: true })}>{translate('administration_configuration_wizard_configuration_message')}</p>
+            </GroupItem>
           </Group>
         )}
-
-        <Container overflow gap wrap>
-          {configurationWizard && (
-            <Group form>
-              <GroupItem>
-                <h3>{translate('administration_configuration_wizard_configuration_title')}</h3>
-              </GroupItem>
-              <GroupItem>
-                <p className={s(styles, { message: true })}>{translate('administration_configuration_wizard_configuration_message')}</p>
-              </GroupItem>
+        <Form ref={focusedRef} context={form} name="server_config" contents onChange={handleChange}>
+          <Container wrap gap grid medium>
+            <ServerConfigurationInfoForm state={part.state} />
+            <Group form gap>
+              <GroupTitle>{translate('administration_configuration_wizard_configuration_plugins')}</GroupTitle>
+              <ServerConfigurationConfigurationForm serverConfig={part.state.serverConfig} />
+              <ServerConfigurationNavigatorViewForm configs={part.state} />
+              <ServerConfigurationFeaturesForm state={part.state} configurationWizard={configurationWizard} />
+              <Placeholder container={serverConfigurationService.pluginsContainer} configurationWizard={configurationWizard} state={part.state} />
             </Group>
-          )}
-          <Loader state={service}>
-            {() => (
-              <Loader className={s(styles, { loader: true })} suspense>
-                <Container wrap gap grid medium>
-                  <ServerConfigurationInfoForm state={service.state} />
-                  <Group form gap>
-                    <GroupTitle>{translate('administration_configuration_wizard_configuration_plugins')}</GroupTitle>
-                    <ServerConfigurationConfigurationForm serverConfig={service.state.serverConfig} />
-                    <ServerConfigurationNavigatorViewForm configs={service.state} />
-                    <ServerConfigurationFeaturesForm state={service.state} configurationWizard={configurationWizard} />
-                    <Placeholder container={service.pluginsContainer} configurationWizard={configurationWizard} state={service.state} />
-                  </Group>
-                  <Placeholder container={service.configurationContainer} configurationWizard={configurationWizard} state={service.state} />
-                  <ServerConfigurationSecurityForm serverConfig={service.state.serverConfig} />
-                  <ServerConfigurationDriversForm serverConfig={service.state.serverConfig} />
-                </Container>
-              </Loader>
-            )}
-          </Loader>
-        </Container>
-      </ColoredContainer>
-    </Form>
+            <Placeholder container={serverConfigurationService.configurationContainer} configurationWizard={configurationWizard} state={part.state} />
+            <ServerConfigurationSecurityForm serverConfig={part.state.serverConfig} />
+            <ServerConfigurationDriversForm serverConfig={part.state.serverConfig} />
+          </Container>
+        </Form>
+      </Container>
+    </ColoredContainer>
   );
 });

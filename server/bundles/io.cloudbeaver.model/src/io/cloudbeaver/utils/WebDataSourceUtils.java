@@ -18,9 +18,9 @@ package io.cloudbeaver.utils;
 
 import io.cloudbeaver.DBWConstants;
 import io.cloudbeaver.DBWebException;
+import io.cloudbeaver.WebSessionProjectImpl;
 import io.cloudbeaver.model.WebConnectionInfo;
 import io.cloudbeaver.model.WebNetworkHandlerConfigInput;
-import io.cloudbeaver.model.app.WebApplication;
 import io.cloudbeaver.model.session.WebSession;
 import org.jkiss.code.NotNull;
 import org.jkiss.code.Nullable;
@@ -32,11 +32,13 @@ import org.jkiss.dbeaver.model.app.DBPProject;
 import org.jkiss.dbeaver.model.connection.DBPConnectionConfiguration;
 import org.jkiss.dbeaver.model.net.DBWHandlerConfiguration;
 import org.jkiss.dbeaver.model.net.ssh.SSHConstants;
+import org.jkiss.dbeaver.model.websocket.event.datasource.WSDataSourceDisconnectEvent;
 import org.jkiss.dbeaver.runtime.DBWorkbench;
 import org.jkiss.utils.CommonUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class WebDataSourceUtils {
 
@@ -97,6 +99,10 @@ public class WebDataSourceUtils {
     private static void setSecureProperties(DBWHandlerConfiguration handlerConfig, WebNetworkHandlerConfigInput cfgInput, boolean ignoreNulls) {
         var secureProperties = cfgInput.getSecureProperties();
         if (secureProperties == null) {
+            if (!handlerConfig.isSavePassword()) {
+                // clear all secure properties from handler config
+                handlerConfig.setSecureProperties(Map.of());
+            }
             return;
         }
         for (var pr : secureProperties.entrySet()) {
@@ -109,14 +115,22 @@ public class WebDataSourceUtils {
 
     @Nullable
     public static DBPDataSourceContainer getLocalOrGlobalDataSource(
-        WebApplication application, WebSession webSession, @Nullable String projectId, String connectionId
+        WebSession webSession, @Nullable String projectId, String connectionId
     ) throws DBWebException {
         DBPDataSourceContainer dataSource = null;
         if (!CommonUtils.isEmpty(connectionId)) {
-            dataSource = webSession.getProjectById(projectId).getDataSourceRegistry().getDataSource(connectionId);
-            if (dataSource == null && (webSession.hasPermission(DBWConstants.PERMISSION_ADMIN) || application.isConfigurationMode())) {
+            WebSessionProjectImpl project = webSession.getProjectById(projectId);
+            if (project == null) {
+                throw new DBWebException("Project '" + projectId + "' not found");
+            }
+            dataSource = project.getDataSourceRegistry().getDataSource(connectionId);
+            if (dataSource == null &&
+                (webSession.hasPermission(DBWConstants.PERMISSION_ADMIN) || webSession.getApplication().isConfigurationMode())) {
                 // If called for new connection in admin mode then this connection may absent in session registry yet
-                dataSource = getGlobalDataSourceRegistry().getDataSource(connectionId);
+                project = webSession.getGlobalProject();
+                if (project != null) {
+                    dataSource = project.getDataSourceRegistry().getDataSource(connectionId);
+                }
             }
         }
         return dataSource;
@@ -144,6 +158,14 @@ public class WebDataSourceUtils {
         if (dataSource.isConnected()) {
             try {
                 dataSource.disconnect(webSession.getProgressMonitor());
+                webSession.addSessionEvent(
+                    new WSDataSourceDisconnectEvent(
+                        dataSource.getProject().getId(),
+                        dataSource.getId(),
+                        webSession.getSessionId(),
+                        webSession.getUserId()
+                    )
+                );
                 return true;
             } catch (DBException e) {
                 log.error("Error closing connection", e);
@@ -152,5 +174,29 @@ public class WebDataSourceUtils {
             //new DisconnectJob(connectionInfo.getDataSource()).schedule();
         }
         return false;
+    }
+
+    /**
+     * The method that seeks for web connection in session cache by connection id.
+     * Mostly used when project id is not defined.
+     */
+    @NotNull
+    public static WebConnectionInfo getWebConnectionInfo(
+        @NotNull WebSession webSession,
+        @Nullable String projectId,
+        @NotNull String connectionId
+    ) throws DBWebException {
+        if (projectId == null) {
+            webSession.addWarningMessage("Project id is not defined in request. Try to find it from connection cache");
+            // try to find connection in all accessible projects
+            Optional<WebConnectionInfo> optional = webSession.getAccessibleProjects().stream()
+                .flatMap(p -> p.getConnections().stream()) // get connection cache from web projects
+                .filter(e -> e.getId().contains(connectionId))
+                .findFirst();
+            if (optional.isPresent()) {
+                return optional.get();
+            }
+        }
+        return webSession.getAccessibleProjectById(projectId).getWebConnectionInfo(connectionId);
     }
 }

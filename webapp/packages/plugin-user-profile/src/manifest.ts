@@ -13,21 +13,14 @@ export const userProfilePlugin: PluginManifest = {
   },
 
   providers: [
-    () => import('./PluginBootstrap').then(m => m.PluginBootstrap),
-    () => import('./LocaleService').then(m => m.LocaleService),
-    () => import('./UserProfileTabsService').then(m => m.UserProfileTabsService),
-    () => import('./UserProfileOptionsPanelService').then(m => m.UserProfileOptionsPanelService),
-    () => import('./UserProfileForm/UserProfileFormBootstrap').then(m => m.UserProfileFormBootstrap),
-    () => import('./UserProfileForm/UserProfileFormService').then(m => m.UserProfileFormService),
-    () => import('./UserProfileForm/UserInfoPart/UserProfileFormInfoPartBootstrap').then(m => m.UserProfileFormInfoPartBootstrap),
-    () => import('./UserProfileForm/UserInfoPart/UserProfileFormInfoPartService').then(m => m.UserProfileFormInfoPartService),
+    () => import('./PluginBootstrap.js').then(m => m.PluginBootstrap),
+    () => import('./LocaleService.js').then(m => m.LocaleService),
+    () => import('./UserProfileTabsService.js').then(m => m.UserProfileTabsService),
+    () => import('./UserProfileOptionsPanelService.js').then(m => m.UserProfileOptionsPanelService),
+    () => import('./UserProfileForm/UserInfoPart/UserProfileFormInfoPartBootstrap.js').then(m => m.UserProfileFormInfoPartBootstrap),
     () =>
-      import('./UserProfileForm/UserAuthenticationPart/UserProfileFormAuthenticationPartBootstrap').then(
+      import('./UserProfileForm/UserAuthenticationPart/UserProfileFormAuthenticationPartBootstrap.js').then(
         m => m.UserProfileFormAuthenticationPartBootstrap,
-      ),
-    () =>
-      import('./UserProfileForm/UserAuthenticationPart/UserProfileFormAuthenticationPartService').then(
-        m => m.UserProfileFormAuthenticationPartService,
       ),
   ],
 };

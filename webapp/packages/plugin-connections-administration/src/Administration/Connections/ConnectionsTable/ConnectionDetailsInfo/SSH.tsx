@@ -7,11 +7,11 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { PlaceholderComponent, s, StaticImage, useResource, useS, useTranslate } from '@cloudbeaver/core-blocks';
+import { type PlaceholderComponent, s, StaticImage, useResource, useS, useTranslate } from '@cloudbeaver/core-blocks';
 import { NetworkHandlerResource, SSH_TUNNEL_ID } from '@cloudbeaver/core-connections';
 
-import type { IConnectionDetailsPlaceholderProps } from '../../ConnectionsAdministrationService';
-import ConnectionDetailsStyles from './ConnectionDetailsStyles.m.css';
+import type { IConnectionDetailsPlaceholderProps } from '../../ConnectionsAdministrationService.js';
+import ConnectionDetailsStyles from './ConnectionDetailsStyles.module.css';
 
 export const SSH: PlaceholderComponent<IConnectionDetailsPlaceholderProps> = observer(function SSH({ connection }) {
   const translate = useTranslate();

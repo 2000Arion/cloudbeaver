@@ -23,8 +23,8 @@ import {
 import { useService } from '@cloudbeaver/core-di';
 import { OptionsPanelService } from '@cloudbeaver/core-ui';
 
-import { AppScreenService } from './AppScreenService';
-import style from './RightArea.m.css';
+import { AppScreenService } from './AppScreenService.js';
+import style from './RightArea.module.css';
 
 interface Props {
   className?: string;
@@ -40,13 +40,12 @@ export const RightArea = observer<Props>(function RightArea({ className }) {
 
   const toolsDisabled = appScreenService.rightAreaBottom.getDisplayed({}).length === 0;
 
+  function close() {
+    optionsPanelService.close();
+  }
+
   return (
-    <SlideBox open={optionsPanelService.active} className={s(styles, { slideBox: true }, className)}>
-      <SlideElement>
-        <Loader className={s(styles, { loader: true })} suspense>
-          <OptionsPanel />
-        </Loader>
-      </SlideElement>
+    <SlideBox open={optionsPanelService.active} className={s(styles, { slideBox: true }, className)} onClose={close}>
       <SlideElement>
         <Split {...splitState} sticky={30} split="horizontal" mode={toolsDisabled ? 'minimize' : splitState.mode} disable={toolsDisabled} keepRatio>
           <Pane className={s(styles, { pane: true })}>
@@ -61,7 +60,12 @@ export const RightArea = observer<Props>(function RightArea({ className }) {
             </Loader>
           </Pane>
         </Split>
-        <SlideOverlay onClick={() => optionsPanelService.close()} />
+        <SlideOverlay onClick={close} />
+      </SlideElement>
+      <SlideElement>
+        <Loader className={s(styles, { loader: true })} suspense>
+          <OptionsPanel />
+        </Loader>
       </SlideElement>
     </SlideBox>
   );

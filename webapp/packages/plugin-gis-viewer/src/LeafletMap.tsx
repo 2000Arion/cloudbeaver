@@ -7,7 +7,6 @@
  */
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="./react-leaflet.d.ts" />
-import type geojson from 'geojson';
 import leaflet from 'leaflet';
 import { useCallback, useEffect, useState } from 'react';
 import { GeoJSON, LayersControl, MapContainer, TileLayer, type TileLayerProps } from 'react-leaflet';
@@ -15,7 +14,7 @@ import { GeoJSON, LayersControl, MapContainer, TileLayer, type TileLayerProps } 
 import { s, useS, useSplit, useTranslate } from '@cloudbeaver/core-blocks';
 import type { IResultSetElementKey, IResultSetValue } from '@cloudbeaver/plugin-data-viewer';
 
-import styles from './LeafletMap.m.css';
+import styles from './LeafletMap.module.css';
 import './styles/base.scss';
 
 export interface IAssociatedValue {
@@ -30,7 +29,7 @@ interface IFeatureProperties {
 
 export interface IGeoJSONFeature extends GeoJSON.Feature<GeoJSON.GeometryObject, IFeatureProperties> {
   type: 'Feature';
-  bbox?: geojson.BBox;
+  bbox?: any;
 }
 
 interface IBaseTile extends TileLayerProps {
@@ -121,7 +120,7 @@ export const LeafletMap: React.FC<Props> = function LeafletMap({ geoJSON, crsKey
 
         popupContent += '<table>';
         for (let i = 0; i < associatedValues.length; i++) {
-          const { key, value } = associatedValues[i];
+          const { key, value } = associatedValues[i]!;
 
           if (value === undefined || typeof value === 'object') {
             continue;
@@ -141,7 +140,7 @@ export const LeafletMap: React.FC<Props> = function LeafletMap({ geoJSON, crsKey
       geoJSONLayerRef.clearLayers();
 
       for (let i = 0; i < geoJSON.length; i++) {
-        geoJSONLayerRef.addData(geoJSON[i]);
+        geoJSONLayerRef.addData(geoJSON[i]!);
       }
 
       const bounds = geoJSONLayerRef.getBounds();

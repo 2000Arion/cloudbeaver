@@ -24,14 +24,15 @@ import io.cloudbeaver.WebServiceUtils;
 import io.cloudbeaver.model.WebConnectionConfig;
 import io.cloudbeaver.model.WebNetworkHandlerConfigInput;
 import io.cloudbeaver.model.session.WebSession;
-import io.cloudbeaver.server.CBPlatform;
+import io.cloudbeaver.server.WebAppSessionManager;
+import io.cloudbeaver.server.WebAppUtils;
 import io.cloudbeaver.server.graphql.GraphQLEndpoint;
 import io.cloudbeaver.service.DBWBindingContext;
 import io.cloudbeaver.service.WebServiceBindingBase;
 import io.cloudbeaver.service.core.impl.WebServiceCore;
-import io.cloudbeaver.service.session.WebSessionManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jkiss.utils.CommonUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -49,10 +50,10 @@ public class WebServiceBindingCore extends WebServiceBindingBase<DBWServiceCore>
 
     @Override
     public void bindWiring(DBWBindingContext model) throws DBWebException {
-        CBPlatform platform = CBPlatform.getInstance();
-        WebSessionManager sessionManager = platform.getSessionManager();
+        WebAppSessionManager sessionManager = WebAppUtils.getWebApplication().getSessionManager();
         model.getQueryType()
             .dataFetcher("serverConfig", env -> getService(env).getServerConfig())
+            .dataFetcher("systemInfo", env -> getService(env).getSystemInformationProperties(getWebSession(env)))
             .dataFetcher("productSettings", env -> getService(env).getProductSettings(getWebSession(env)))
 
             .dataFetcher("driverList", env -> getService(env).getDriverList(getWebSession(env), env.getArgument("id")))
@@ -134,8 +135,8 @@ public class WebServiceBindingCore extends WebServiceBindingBase<DBWServiceCore>
                         env.getArgument("id"),
                         env.getArgument("credentials"),
                         nhc,
-                        env.getArgument("saveCredentials"),
-                        env.getArgument("sharedCredentials"),
+                        CommonUtils.toBoolean(env.getArgument("saveCredentials")),
+                        CommonUtils.toBoolean(env.getArgument("sharedCredentials")),
                         env.getArgument("selectedSecretId")
                     );
                 }

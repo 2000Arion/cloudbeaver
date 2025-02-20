@@ -9,16 +9,16 @@ import { computed, makeObservable, observable } from 'mobx';
 
 import { injectable } from '@cloudbeaver/core-di';
 import { NotificationService } from '@cloudbeaver/core-events';
-import { Executor, IExecutor } from '@cloudbeaver/core-executor';
+import { Executor, type IExecutor } from '@cloudbeaver/core-executor';
 import { EAdminPermission, PermissionsService, ServerConfigResource, SessionPermissionsResource } from '@cloudbeaver/core-root';
-import { RouterState, ScreenService } from '@cloudbeaver/core-routing';
+import { type RouterState, ScreenService } from '@cloudbeaver/core-routing';
 import { StorageService } from '@cloudbeaver/core-storage';
-import { DefaultValueGetter, GlobalConstants, MetadataMap, schema } from '@cloudbeaver/core-utils';
+import { type DefaultValueGetter, GlobalConstants, isNotNullDefined, MetadataMap, schema } from '@cloudbeaver/core-utils';
 
-import { AdministrationItemService } from '../AdministrationItem/AdministrationItemService';
-import type { IAdministrationItemRoute } from '../AdministrationItem/IAdministrationItemRoute';
-import type { IRouteParams } from '../AdministrationItem/IRouteParams';
-import { ADMINISTRATION_SCREEN_STATE_SCHEMA, type IAdministrationScreenInfo } from './IAdministrationScreenState';
+import { AdministrationItemService } from '../AdministrationItem/AdministrationItemService.js';
+import type { IAdministrationItemRoute } from '../AdministrationItem/IAdministrationItemRoute.js';
+import type { IRouteParams } from '../AdministrationItem/IRouteParams.js';
+import { ADMINISTRATION_SCREEN_STATE_SCHEMA, type IAdministrationScreenInfo } from './IAdministrationScreenState.js';
 
 const ADMINISTRATION_INFO = 'administration_info';
 
@@ -50,7 +50,7 @@ export class AdministrationScreenService {
   }
 
   get publicDisabled(): boolean {
-    return this.serverConfigResource.publicDisabled;
+    return this.permissionsService.publicDisabled;
   }
 
   readonly ensurePermissions: IExecutor;
@@ -111,6 +111,48 @@ export class AdministrationScreenService {
     this.permissionsResource.onDataUpdate.addPostHandler(() => {
       this.checkPermissions(this.screenService.routerService.state);
     });
+
+    this.screenService.routeChange.addHandler(this.onRouteChange.bind(this));
+  }
+
+  private async onRouteChange() {
+    // this is need for this.isConfigurationMode
+    await this.serverConfigResource.load();
+
+    const uniqueItems = this.administrationItemService.getUniqueItems(this.isConfigurationMode);
+    const item = uniqueItems.find(i => i.name === this.activeScreen?.item);
+
+    if (!this.isAdministrationPageActive) {
+      return;
+    }
+
+    if (!this.activeScreen || !item) {
+      this.navigateToRoot();
+      return;
+    }
+
+    const loaders = [item]
+      .map(loader => loader?.getLoader?.())
+      .filter(isNotNullDefined)
+      .flat();
+
+    for (const loader of loaders) {
+      if (loader.isError()) {
+        continue;
+      }
+
+      if (!loader.isLoaded() || loader.isOutdated?.() === true) {
+        try {
+          await loader.load();
+        } catch {}
+      }
+    }
+
+    const loadedItem = this.administrationItemService.getItem(this.activeScreen.item, this.isConfigurationMode);
+
+    if (!loadedItem) {
+      this.navigateToRoot();
+    }
   }
 
   getRouteName(item?: string, sub?: string, param?: string) {
@@ -213,7 +255,7 @@ export class AdministrationScreenService {
   }
 
   async handleCanDeActivate(fromState: RouterState, toState: RouterState): Promise<boolean> {
-    if (!fromState.params.item) {
+    if (!fromState.params['item']) {
       return true;
     }
 
@@ -228,7 +270,7 @@ export class AdministrationScreenService {
   }
 
   async handleCanActivate(toState: RouterState, fromState: RouterState): Promise<boolean> {
-    if (!toState.params.item) {
+    if (!toState.params['item']) {
       return false;
     }
 

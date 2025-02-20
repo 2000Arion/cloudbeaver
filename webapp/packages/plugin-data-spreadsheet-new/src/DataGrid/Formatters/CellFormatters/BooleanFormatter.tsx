@@ -9,14 +9,14 @@ import { observer } from 'mobx-react-lite';
 import { useContext } from 'react';
 
 import { getComputed, s, useS } from '@cloudbeaver/core-blocks';
-import type { IResultSetRowKey } from '@cloudbeaver/plugin-data-viewer';
-import type { RenderCellProps } from '@cloudbeaver/plugin-react-data-grid';
+import type { RenderCellProps } from '@cloudbeaver/plugin-data-grid';
+import { DatabaseEditChangeType, type IResultSetRowKey } from '@cloudbeaver/plugin-data-viewer';
 
-import { EditingContext } from '../../../Editing/EditingContext';
-import { CellContext } from '../../CellRenderer/CellContext';
-import { DataGridContext } from '../../DataGridContext';
-import { TableDataContext } from '../../TableDataContext';
-import style from './BooleanFormatter.m.css';
+import { EditingContext } from '../../../Editing/EditingContext.js';
+import { CellContext } from '../../CellRenderer/CellContext.js';
+import { DataGridContext } from '../../DataGridContext.js';
+import { TableDataContext } from '../../TableDataContext.js';
+import style from './BooleanFormatter.module.css';
 
 export const BooleanFormatter = observer<RenderCellProps<IResultSetRowKey>>(function BooleanFormatter({ column, row }) {
   const context = useContext(DataGridContext);
@@ -38,7 +38,11 @@ export const BooleanFormatter = observer<RenderCellProps<IResultSetRowKey>>(func
   const booleanValue = getComputed(() => textValue.toLowerCase() === 'true');
   const stringifiedValue = getComputed(() => formatter.getDisplayString(cell));
   const valueRepresentation = value === null ? stringifiedValue : `[${booleanValue ? 'v' : ' '}]`;
-  const disabled = !column.editable || editingContext.readonly || formatter.isReadOnly(cell);
+  const disabled =
+    !column.editable ||
+    editingContext.readonly ||
+    formatter.isReadOnly(cell) ||
+    (!context.model.hasElementIdentifier(context.resultIndex) && cellContext.editionState !== DatabaseEditChangeType.add);
 
   function toggleValue() {
     if (disabled || !tableDataContext || !cell) {

@@ -8,8 +8,8 @@
 import { observer } from 'mobx-react-lite';
 import { useCallback, useContext, useMemo, useState } from 'react';
 
-import { FormContext } from './FormContext';
-import { IRadioGroupContext, RadioGroupContext } from './RadioGroupContext';
+import { FormContext } from './FormContext.js';
+import { type IRadioGroupContext, RadioGroupContext } from './RadioGroupContext.js';
 
 type BaseProps = React.PropsWithChildren<{
   name: string;
@@ -31,8 +31,8 @@ type ObjectProps<TKey extends keyof TState, TState> = BaseProps & {
 };
 
 interface RadioGroupType {
-  <T>(props: ControlledProps<T>): JSX.Element;
-  <TKey extends keyof TState, TState>(props: ObjectProps<TKey, TState>): JSX.Element;
+  <T>(props: ControlledProps<T>): React.JSX.Element;
+  <TKey extends keyof TState, TState>(props: ObjectProps<TKey, TState>): React.JSX.Element;
 }
 
 export const RadioGroup: RadioGroupType = observer(function RadioGroup({
@@ -64,7 +64,7 @@ export const RadioGroup: RadioGroupType = observer(function RadioGroup({
     [name, state, formContext, onChange],
   );
 
-  const value = state ? state[name] : controlledValue ?? selfValue;
+  const value = state ? state[name] : (controlledValue ?? selfValue);
 
   const context: IRadioGroupContext = useMemo(
     () => ({

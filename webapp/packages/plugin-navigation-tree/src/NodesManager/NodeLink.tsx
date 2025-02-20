@@ -11,8 +11,8 @@ import { Link } from '@cloudbeaver/core-blocks';
 import { useService } from '@cloudbeaver/core-di';
 import { parseNodeParentId } from '@cloudbeaver/core-navigation-tree';
 
-import { NavigationTreeService } from '../NavigationTree/NavigationTreeService';
-import styles from './NodeLink.m.css';
+import { NavigationTreeService } from '../NavigationTree/NavigationTreeService.js';
+import styles from './NodeLink.module.css';
 
 export interface NodeLinkProps {
   name: string;
@@ -31,7 +31,7 @@ export const NodeLink: React.FC<React.PropsWithChildren<NodeLinkProps>> = functi
 
   if (nodeId) {
     return (
-      <Link className={styles.link} onClick={handleClick}>
+      <Link className={styles['link']} onClick={handleClick}>
         {children}
       </Link>
     );

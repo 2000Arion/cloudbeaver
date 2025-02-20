@@ -7,21 +7,20 @@
  */
 import { isObjectsEqual } from '@cloudbeaver/core-utils';
 
+import type { ResourceKey } from './ResourceKey.js';
+
 export type ResourceAliasOptionsKey = string | number;
-export type ResourceAliasOptionsValueTypes = string | number | boolean | null | undefined;
+export type ResourceAliasOptionsValueTypes = string | number | boolean | ResourceKey<unknown> | null | undefined;
 export type ResourceAliasOptionsValue = ResourceAliasOptionsValueTypes | Array<ResourceAliasOptionsValueTypes>;
 export type ResourceAliasOptions = Readonly<Record<ResourceAliasOptionsKey, ResourceAliasOptionsValue>> | undefined;
 
 export abstract class ResourceAlias<TKey, TOptions extends ResourceAliasOptions> {
   readonly id: string;
   readonly options: TOptions;
-  target: any;
   parent?: ResourceAlias<TKey, any>;
-  private readonly typescriptHack: TKey;
   abstract readonly name: string;
 
   constructor(id: string, options: TOptions, parent?: ResourceAlias<TKey, any>) {
-    this.typescriptHack = null as any;
     this.id = id;
     this.options = options;
     this.parent = parent;
@@ -41,14 +40,10 @@ export abstract class ResourceAlias<TKey, TOptions extends ResourceAliasOptions>
     return undefined;
   }
 
-  setTarget(target: any): this {
-    this.target = target;
-    return this;
-  }
-
-  setParent(parent: ResourceAlias<TKey, any>): this {
+  setParent(parent: ResourceAlias<TKey, any> | undefined): this {
+    parent = this.parent ? this.parent.setParent(parent) : parent;
     const copy = new (this.constructor as any)(this.id, this.options, parent) as this;
-    return copy.setTarget(this.target);
+    return copy;
   }
 
   isEqual(key: ResourceAlias<TKey, any>): boolean {
@@ -75,7 +70,7 @@ export abstract class ResourceAlias<TKey, TOptions extends ResourceAliasOptions>
     return this.toString();
   }
 
-  private get [Symbol.toStringTag]() {
+  get [Symbol.toStringTag]() {
     return this.toString();
   }
 

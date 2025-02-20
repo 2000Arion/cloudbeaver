@@ -16,13 +16,14 @@
  */
 package io.cloudbeaver.service.sql;
 
+import io.cloudbeaver.model.app.ServletAppConfiguration;
 import io.cloudbeaver.model.session.WebSession;
 import io.cloudbeaver.registry.WebServiceRegistry;
-import io.cloudbeaver.server.CBAppConfig;
-import io.cloudbeaver.server.CBApplication;
 import io.cloudbeaver.utils.CBModelConstants;
+import io.cloudbeaver.utils.ServletAppUtils;
 import org.jkiss.code.NotNull;
 import org.jkiss.dbeaver.Log;
+import org.jkiss.dbeaver.model.DBPEvaluationContext;
 import org.jkiss.dbeaver.model.data.*;
 import org.jkiss.dbeaver.model.exec.DBCException;
 import org.jkiss.dbeaver.model.exec.DBCSession;
@@ -36,9 +37,8 @@ import org.jkiss.dbeaver.utils.GeneralUtils;
 import org.jkiss.utils.Base64;
 import org.jkiss.utils.CommonUtils;
 
-import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -130,9 +130,9 @@ public class WebSQLUtils {
     private static Map<String, Object> serializeDocumentValue(WebSession session, DBDDocument document) throws DBCException {
         String documentData;
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            document.serializeDocument(session.getProgressMonitor(), baos, StandardCharsets.UTF_8);
-            documentData = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+            StringWriter writer = new StringWriter();
+            document.serializeDocument(session.getProgressMonitor(), writer);
+            documentData = writer.toString();
         } catch (Exception e) {
             throw new DBCException("Error serializing document", e);
         }
@@ -151,9 +151,11 @@ public class WebSQLUtils {
         if (ContentUtils.isTextContent(value)) {
             String stringValue = ContentUtils.getContentStringValue(session.getProgressMonitor(), value);
             int textPreviewMaxLength = CommonUtils.toInt(
-                CBApplication.getInstance().getAppConfiguration().getResourceQuota(
-                    WebSQLConstants.QUOTA_PROP_TEXT_PREVIEW_MAX_LENGTH,
-                    WebSQLConstants.TEXT_PREVIEW_MAX_LENGTH));
+                ServletAppUtils.getServletApplication()
+                    .getAppConfiguration()
+                    .getResourceQuota(WebSQLConstants.QUOTA_PROP_TEXT_PREVIEW_MAX_LENGTH),
+                WebSQLConstants.TEXT_PREVIEW_MAX_LENGTH
+            );
             if (stringValue != null && stringValue.length() > textPreviewMaxLength) {
                 stringValue =  stringValue.substring(0, textPreviewMaxLength);
             }
@@ -164,12 +166,11 @@ public class WebSQLUtils {
             if (binaryValue != null) {
                 byte[] previewValue = binaryValue;
                 // gets parameters from the configuration file
-                CBAppConfig config = CBApplication.getInstance().getAppConfiguration();
+                ServletAppConfiguration config = ServletAppUtils.getServletApplication().getAppConfiguration();
                 // the max length of the text preview
                 int textPreviewMaxLength = CommonUtils.toInt(
                     config.getResourceQuota(
-                        WebSQLConstants.QUOTA_PROP_TEXT_PREVIEW_MAX_LENGTH,
-                        WebSQLConstants.TEXT_PREVIEW_MAX_LENGTH));
+                        WebSQLConstants.QUOTA_PROP_TEXT_PREVIEW_MAX_LENGTH), WebSQLConstants.TEXT_PREVIEW_MAX_LENGTH);
                 if (previewValue.length > textPreviewMaxLength) {
                     previewValue = Arrays.copyOf(previewValue, textPreviewMaxLength);
                 }
@@ -177,8 +178,8 @@ public class WebSQLUtils {
                 // the max length of the binary preview
                 int binaryPreviewMaxLength = CommonUtils.toInt(
                     config.getResourceQuota(
-                        WebSQLConstants.QUOTA_PROP_BINARY_PREVIEW_MAX_LENGTH,
-                        WebSQLConstants.BINARY_PREVIEW_MAX_LENGTH));
+                        WebSQLConstants.QUOTA_PROP_BINARY_PREVIEW_MAX_LENGTH),
+                    WebSQLConstants.BINARY_PREVIEW_MAX_LENGTH);
                 byte[] inlineValue = binaryValue;
                 if (inlineValue.length > binaryPreviewMaxLength) {
                     inlineValue = Arrays.copyOf(inlineValue, textPreviewMaxLength);
@@ -214,9 +215,11 @@ public class WebSQLUtils {
      */
     public static Object serializeStringValue(Object value) {
         int textPreviewMaxLength = CommonUtils.toInt(
-            CBApplication.getInstance().getAppConfiguration().getResourceQuota(
-                WebSQLConstants.QUOTA_PROP_TEXT_PREVIEW_MAX_LENGTH,
-                WebSQLConstants.TEXT_PREVIEW_MAX_LENGTH));
+            ServletAppUtils.getServletApplication()
+                .getAppConfiguration()
+                .getResourceQuota(WebSQLConstants.QUOTA_PROP_TEXT_PREVIEW_MAX_LENGTH),
+            WebSQLConstants.TEXT_PREVIEW_MAX_LENGTH
+        );
         String stringValue = value.toString();
         if (stringValue.length() < textPreviewMaxLength) {
             return value.toString();
@@ -251,5 +254,13 @@ public class WebSQLUtils {
             }
         }
         return value;
+    }
+
+    /**
+     * Returns fully qualified name for a column.
+     */
+    @NotNull
+    public static String getColumnName(@NotNull DBDAttributeBinding binding) {
+        return binding.getFullyQualifiedName(DBPEvaluationContext.UI);
     }
 }

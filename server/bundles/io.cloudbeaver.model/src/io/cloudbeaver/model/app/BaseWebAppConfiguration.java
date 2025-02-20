@@ -25,12 +25,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public abstract class BaseWebAppConfiguration implements WebAppConfiguration {
+public abstract class BaseWebAppConfiguration implements ServletAppConfiguration {
     public static final String DEFAULT_APP_ANONYMOUS_TEAM_NAME = "user";
 
     protected final Map<String, Object> plugins;
     protected String defaultUserTeam = DEFAULT_APP_ANONYMOUS_TEAM_NAME;
     protected boolean resourceManagerEnabled;
+    protected boolean secretManagerEnabled;
     protected boolean showReadOnlyConnectionInfo;
     protected String[] enabledFeatures;
     protected String[] disabledBetaFeatures;
@@ -42,6 +43,7 @@ public abstract class BaseWebAppConfiguration implements WebAppConfiguration {
         this.enabledFeatures = null;
         this.disabledBetaFeatures = new String[0];
         this.showReadOnlyConnectionInfo = false;
+        this.secretManagerEnabled = false;
     }
 
     public BaseWebAppConfiguration(BaseWebAppConfiguration src) {
@@ -51,6 +53,7 @@ public abstract class BaseWebAppConfiguration implements WebAppConfiguration {
         this.enabledFeatures = src.enabledFeatures;
         this.disabledBetaFeatures = src.disabledBetaFeatures;
         this.showReadOnlyConnectionInfo = src.showReadOnlyConnectionInfo;
+        this.secretManagerEnabled = src.secretManagerEnabled;
     }
 
     @Override
@@ -84,14 +87,23 @@ public abstract class BaseWebAppConfiguration implements WebAppConfiguration {
         return resourceManagerEnabled;
     }
 
+    @Override
+    public boolean isSecretManagerEnabled() {
+        return secretManagerEnabled;
+    }
+
+    @Override
     public boolean isFeatureEnabled(String id) {
         return ArrayUtils.contains(getEnabledFeatures(), id);
     }
 
+    @Override
     public boolean isFeaturesEnabled(String[] features) {
         return ArrayUtils.containsAll(getEnabledFeatures(), features);
     }
 
+    @NotNull
+    @Override
     public String[] getEnabledFeatures() {
         if (enabledFeatures == null) {
             // No config - enable all features (+backward compatibility)

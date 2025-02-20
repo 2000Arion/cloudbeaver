@@ -7,7 +7,7 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { ColoredContainer, Form, Group, s, ToolsAction, ToolsPanel, useForm, useTranslate } from '@cloudbeaver/core-blocks';
+import { ColoredContainer, Form, Group, ToolsAction, ToolsPanel, useForm, useTranslate } from '@cloudbeaver/core-blocks';
 import { useService } from '@cloudbeaver/core-di';
 import { NotificationService } from '@cloudbeaver/core-events';
 import { UserSettingsService } from '@cloudbeaver/core-settings-user';
@@ -50,8 +50,8 @@ export const UserProfileSettings = observer(function UserProfileSettings() {
 
   return (
     <Form context={form} contents>
-      <ColoredContainer parent compact vertical wrap gap>
-        <Group box keepSize>
+      <ColoredContainer parent overflow compact vertical noWrap gap>
+        <Group overflow box keepSize>
           <ToolsPanel rounded minHeight>
             <ToolsAction icon="admin-save" viewBox="0 0 24 24" disabled={!changed} onClick={() => form.submit()}>
               {translate('ui_processing_save')}

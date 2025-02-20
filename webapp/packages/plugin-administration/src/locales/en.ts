@@ -1,3 +1,10 @@
+/*
+ * CloudBeaver - Cloud Database Manager
+ * Copyright (C) 2020-2024 DBeaver Corp and others
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * you may not use this file except in compliance with the License.
+ */
 export default [
   ['administration_server_configuration_save_confirmation_title', 'Server settings update'],
   ['administration_server_configuration_save_confirmation_message', 'You are about to change critical settings. Are you sure?'],
@@ -14,9 +21,10 @@ export default [
     'Note: you will be able to change these configuration parameters later on the administration panel.',
   ],
 
-  ['administration_configuration_wizard_configuration', 'Server configuration'],
+  ['administration_configuration_wizard_configuration', 'Server Configuration'],
   ['administration_configuration_wizard_configuration_step_description', 'Main server configuration'],
   ['administration_configuration_wizard_configuration_title', 'You can configure the main server parameters here.'],
+  ['administration_configuration_wizard_configuration_save_error', 'Failed to save server configuration'],
   [
     'administration_configuration_wizard_configuration_message',
     'You will be able to add additional services after the server configuration.\n\rAdministrator is a super user who can configure server, set databases connections, manage other users and much more. Please, remember the entered password. It is not possible to recover administrator password automatically.',
@@ -51,10 +59,10 @@ export default [
   ['administration_configuration_wizard_configuration_security_admin_credentials', 'Save credentials'],
   [
     'administration_configuration_wizard_configuration_security_admin_credentials_description',
-    'Allow to save credentials for pre-configured database',
+    'Allows to save credentials for pre-configured databases',
   ],
   ['administration_configuration_wizard_configuration_security_public_credentials', 'Save users credentials'],
-  ['administration_configuration_wizard_configuration_security_public_credentials_description', 'Allow to save credentials for non-admin users'],
+  ['administration_configuration_wizard_configuration_security_public_credentials_description', 'Allows to save credentials for non-admin users'],
 
   ['administration_configuration_wizard_configuration_navigator', 'Navigator'],
   ['administration_configuration_wizard_configuration_navigator_hide_folders', 'Hide Folders'],

@@ -1,5 +1,6 @@
 {
   "name": "@cloudbeaver/core-client-activity",
+  "type": "module",
   "sideEffects": [
     "src/**/*.css",
     "src/**/*.scss",
@@ -8,22 +9,27 @@
   "version": "0.1.0",
   "description": "",
   "license": "Apache-2.0",
-  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc -b",
     "clean": "rimraf --glob dist",
     "lint": "eslint ./src/ --ext .ts,.tsx",
-    "lint-fix": "eslint ./src/ --ext .ts,.tsx --fix",
     "validate-dependencies": "core-cli-validate-dependencies",
-    "update-ts-references": "yarn run clean && typescript-resolve-references"
+    "test": "core-cli-test"
   },
   "dependencies": {
-    "@cloudbeaver/core-di": "~0.1.0",
-    "@cloudbeaver/core-executor": "~0.1.0",
-    "mobx": "^6.12.0"
+    "@cloudbeaver/core-di": "workspace:*",
+    "@cloudbeaver/core-executor": "workspace:*",
+    "mobx": "^6",
+    "tslib": "^2"
   },
-  "peerDependencies": {},
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "@cloudbeaver/core-cli": "workspace:*",
+    "@cloudbeaver/tsconfig": "workspace:*",
+    "@jest/globals": "^29",
+    "@types/jest": "^29",
+    "typescript": "^5"
   }
 }

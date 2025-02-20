@@ -7,13 +7,13 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { AuthProviderConfiguration, AuthProvidersResource, UserInfoResource } from '@cloudbeaver/core-authentication';
+import { type AuthProviderConfiguration, AuthProvidersResource, UserInfoResource } from '@cloudbeaver/core-authentication';
 import { Button, Cell, Container, IconOrImage, Link, s, useResource, useS, useTranslate } from '@cloudbeaver/core-blocks';
 import { useService } from '@cloudbeaver/core-di';
 import { CachedMapAllKey } from '@cloudbeaver/core-resource';
 import { AuthenticationService } from '@cloudbeaver/plugin-authentication';
 
-import styles from './UserActiveAuthMethods.m.css';
+import styles from './UserActiveAuthMethods.module.css';
 
 interface Props {
   className?: string;

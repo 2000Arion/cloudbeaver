@@ -8,10 +8,11 @@
 import { computed, makeObservable, observable } from 'mobx';
 
 import type { ITask, TaskScheduler } from '@cloudbeaver/core-executor';
-import type { AsyncTaskInfo, AsyncTaskInfoService, GraphQLService } from '@cloudbeaver/core-sdk';
+import { AsyncTaskInfoService } from '@cloudbeaver/core-root';
+import type { AsyncTaskInfo, GraphQLService } from '@cloudbeaver/core-sdk';
 
-import type { ConnectionExecutionContextResource, IConnectionExecutionContextInfo } from './ConnectionExecutionContextResource';
-import type { IConnectionExecutionContext } from './IConnectionExecutionContext';
+import type { ConnectionExecutionContextResource, IConnectionExecutionContextInfo } from './ConnectionExecutionContextResource.js';
+import type { IConnectionExecutionContext } from './IConnectionExecutionContext.js';
 
 export interface IConnectionExecutionContextUpdateTaskInfo {
   name?: string;
@@ -159,6 +160,20 @@ export class ConnectionExecutionContext implements IConnectionExecutionContext {
     });
 
     return mapAsyncTaskInfo(result);
+  }
+
+  async getLog() {
+    const result = await this.withContext(async context => {
+      const { log } = await this.graphQLService.sdk.getTransactionLog({
+        projectId: context.projectId,
+        connectionId: context.connectionId,
+        contextId: context.id,
+      });
+
+      return log;
+    });
+
+    return result?.transactionLogInfos;
   }
 
   private withContext<R>(callback: (context: IConnectionExecutionContextInfo) => Promise<R>): Promise<R> {

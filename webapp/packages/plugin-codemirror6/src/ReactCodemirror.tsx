@@ -6,18 +6,19 @@
  * you may not use this file except in compliance with the License.
  */
 import { MergeView } from '@codemirror/merge';
-import { Annotation, Compartment, EditorState, Extension, StateEffect, TransactionSpec } from '@codemirror/state';
+import { Annotation, Compartment, EditorState, type Extension, StateEffect, type TransactionSpec } from '@codemirror/state';
 import { EditorView, ViewUpdate } from '@codemirror/view';
 import { observer } from 'mobx-react-lite';
 import { forwardRef, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useObjectRef } from '@cloudbeaver/core-blocks';
 
-import type { IEditorRef } from './IEditorRef';
-import type { IReactCodeMirrorProps } from './IReactCodemirrorProps';
-import { type IReactCodemirrorContext, ReactCodemirrorContext } from './ReactCodemirrorContext';
-import { useCodemirrorExtensions } from './useCodemirrorExtensions';
-import { validateCursorBoundaries } from './validateCursorBoundaries';
+import { hasInsertProperty } from './hasInsertProperty.js';
+import type { IEditorRef } from './IEditorRef.js';
+import type { IReactCodeMirrorProps } from './IReactCodemirrorProps.js';
+import { type IReactCodemirrorContext, ReactCodemirrorContext } from './ReactCodemirrorContext.js';
+import { useCodemirrorExtensions } from './useCodemirrorExtensions.js';
+import { validateCursorBoundaries } from './validateCursorBoundaries.js';
 
 const External = Annotation.define<boolean>();
 
@@ -31,7 +32,7 @@ export const ReactCodemirror = observer<IReactCodeMirrorProps, IEditorRef>(
       incomingValue,
       extensions = new Map<Compartment, Extension>(),
       readonly,
-      disableCopy,
+      copyEventHandler,
       autoFocus,
       onChange,
       onCursorChange,
@@ -41,15 +42,19 @@ export const ReactCodemirror = observer<IReactCodeMirrorProps, IEditorRef>(
   ) {
     value = value ?? getValue?.();
     const currentExtensions = useRef<Map<Compartment, Extension>>(new Map());
-    const readOnlyFacet = useMemo(() => EditorView.editable.of(!readonly), [readonly]);
+    const readOnlyFacet = useMemo(() => {
+      if (readonly) {
+        return [EditorState.readOnly.of(true), EditorView.editable.of(false), EditorView.contentAttributes.of({ tabIndex: '0' })];
+      }
+
+      return [];
+    }, [readonly]);
     const eventHandlers = useMemo(
       () =>
         EditorView.domEventHandlers({
-          copy() {
-            return disableCopy;
-          },
+          copy: copyEventHandler,
         }),
-      [disableCopy],
+      [copyEventHandler],
     );
     extensions = useCodemirrorExtensions(extensions, [readOnlyFacet, eventHandlers]);
     const [container, setContainer] = useState<HTMLDivElement | null>(null);
@@ -128,6 +133,12 @@ export const ReactCodemirror = observer<IReactCodeMirrorProps, IEditorRef>(
 
         editorView.dom.addEventListener('keydown', event => {
           const newEvent = new KeyboardEvent('keydown', event);
+
+          // we handle undo/redo on the CaptureView level
+          if ((newEvent.metaKey || newEvent.ctrlKey) && ['z', 'y'].includes(newEvent.key.toLowerCase())) {
+            return;
+          }
+
           document.dispatchEvent(newEvent);
         });
 
@@ -188,8 +199,15 @@ export const ReactCodemirror = observer<IReactCodeMirrorProps, IEditorRef>(
           }
         }
 
-        if (cursor && isCursorInDoc && (view.state.selection.main.anchor !== cursor.anchor || view.state.selection.main.head !== cursor.head)) {
+        if (cursor && isCursorInDoc) {
           transaction.selection = cursor;
+        }
+
+        if (hasInsertProperty(transaction.changes) && !transaction.selection) {
+          transaction.selection = {
+            anchor: transaction.changes.insert?.length ?? 0,
+            head: transaction.changes.insert?.length ?? 0,
+          };
         }
 
         if (transaction.changes || transaction.selection) {

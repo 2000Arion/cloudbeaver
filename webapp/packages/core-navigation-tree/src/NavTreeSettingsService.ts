@@ -9,7 +9,6 @@ import { Dependency, injectable } from '@cloudbeaver/core-di';
 import {
   createSettingsAliasResolver,
   ROOT_SETTINGS_LAYER,
-  SettingsManagerService,
   SettingsProvider,
   SettingsProviderService,
   SettingsResolverService,
@@ -39,7 +38,6 @@ export class NavTreeSettingsService extends Dependency {
 
   constructor(
     private readonly settingsProviderService: SettingsProviderService,
-    private readonly settingsManagerService: SettingsManagerService,
     private readonly settingsResolverService: SettingsResolverService,
   ) {
     super();
@@ -60,28 +58,37 @@ export class NavTreeSettingsService extends Dependency {
   }
 
   private registerSettings() {
-    this.settingsManagerService.registerSettings(this.settings, () => [
-      // {
-      //   key: 'childrenLimit',
-      //   access: {
-      //     accessor: ['server'],
-      //   },
-      //   group: NAVIGATION_TREE_SETTINGS_GROUP,
-      //   name: 'Children limit',
-      //   type: ESettingsValueType.Input,
-      // },
-      // {
-      //   group: NAVIGATION_TREE_SETTINGS_GROUP,
-      //   key: 'editing',
-      //   name: 'Editing',
-      //   type: ESettingsValueType.Checkbox,
-      // },
-      // {
-      //   group: NAVIGATION_TREE_SETTINGS_GROUP,
-      //   key: 'deleting',
-      //   name: 'Deleting',
-      //   type: ESettingsValueType.Checkbox,
-      // },
-    ]);
+    // this.settingsManagerService.registerSettings(this.settings, () => [
+    //   {
+    //     key: 'core.navigation-tree.childrenLimit',
+    //     access: {
+    //       scope: ['server'],
+    //     },
+    //     group: NAVIGATION_TREE_SETTINGS_GROUP,
+    //     name: 'core_navigation_tree_settings_children_limit',
+    //     description: 'core_navigation_tree_settings_children_limit_description',
+    //     type: ESettingsValueType.Input,
+    //   },
+    //   {
+    //     group: NAVIGATION_TREE_SETTINGS_GROUP,
+    //     key: 'core.navigation-tree.editing',
+    //     access: {
+    //       scope: ['server'],
+    //     },
+    //     name: 'core_navigation_tree_settings_editing',
+    //     description: 'core_navigation_tree_settings_editing_description',
+    //     type: ESettingsValueType.Checkbox,
+    //   },
+    //   {
+    //     group: NAVIGATION_TREE_SETTINGS_GROUP,
+    //     key: 'core.navigation-tree.deleting',
+    //     access: {
+    //       scope: ['server'],
+    //     },
+    //     name: 'core_navigation_tree_settings_deleting',
+    //     description: 'core_navigation_tree_settings_deleting_description',
+    //     type: ESettingsValueType.Checkbox,
+    //   },
+    // ]);
   }
 }

@@ -1,11 +1,18 @@
+/*
+ * CloudBeaver - Cloud Database Manager
+ * Copyright (C) 2020-2024 DBeaver Corp and others
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * you may not use this file except in compliance with the License.
+ */
 export default [
   ['plugin_navigation_tree_explorer_tab_title', 'Проводник'],
   ['app_navigationTree_openNodeTab', 'Открыть'],
   ['app_navigationTree_search', 'Искать элементы...'],
   ['app_navigationTree_limited', 'Отображено {arg:limit} элементов'],
 
-  ['app_navigationTree_action_link_with_editor', 'Синхронизовать с редактором'],
   ['app_navigationTree_action_collapse_all', 'Свернуть все элементы'],
+  ['app_navigationTree_settings_filter_objects_description', 'Показывать описание объектов'],
 
   ['app_navigationTree_settings_filter_title', 'Фильтр'],
   ['app_navigationTree_settings_filter_description', 'Показывать фильтр'],
@@ -39,4 +46,6 @@ export default [
   ['app_navigationTree_drop_here', 'Drop here...'],
   ['plugin_navigation_tree_settings_projects_description', 'Группировать элементы по проектам'],
   ['plugin_navigation_tree_settings_projects_title', 'Группировать по проектам'],
+  ['plugin_navigation_tree_settings_disable', 'Отключить'],
+  ['plugin_navigation_tree_settings_disable_description', 'Отключить дерево навигации для всех пользователей'],
 ];

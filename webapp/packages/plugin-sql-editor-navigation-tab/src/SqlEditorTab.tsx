@@ -8,45 +8,49 @@
 import { observer } from 'mobx-react-lite';
 import { useContext } from 'react';
 
-import { IconOrImage, s, useTranslate } from '@cloudbeaver/core-blocks';
-import { Connection, ConnectionInfoResource, createConnectionParam } from '@cloudbeaver/core-connections';
-import { useDataContext } from '@cloudbeaver/core-data-context';
+import { IconOrImage, s, useObjectInfoTooltip, useTranslate } from '@cloudbeaver/core-blocks';
+import { ConnectionInfoResource, createConnectionParam } from '@cloudbeaver/core-connections';
+import { useDataContext, useDataContextLink } from '@cloudbeaver/core-data-context';
 import { useService } from '@cloudbeaver/core-di';
-import { ITabData, TabIcon, Tab, TabTitle } from '@cloudbeaver/core-ui';
+import { ProjectInfoResource } from '@cloudbeaver/core-projects';
+import { type ITabData, Tab, TabIcon, TabTitle } from '@cloudbeaver/core-ui';
 import { CaptureViewContext } from '@cloudbeaver/core-view';
 import type { TabHandlerTabComponent } from '@cloudbeaver/plugin-navigation-tabs';
 import {
   DATA_CONTEXT_SQL_EDITOR_STATE,
   ESqlDataSourceFeatures,
   getSqlEditorName,
-  ISqlEditorTabState,
+  type ISqlEditorTabState,
   SqlDataSourceService,
 } from '@cloudbeaver/plugin-sql-editor';
 
-import { DATA_CONTEXT_SQL_EDITOR_TAB } from './DATA_CONTEXT_SQL_EDITOR_TAB';
-import sqlEditorTabStyles from './SqlEditorTab.m.css';
+import { DATA_CONTEXT_SQL_EDITOR_TAB } from './DATA_CONTEXT_SQL_EDITOR_TAB.js';
+import sqlEditorTabStyles from './SqlEditorTab.module.css';
 
 export const SqlEditorTab: TabHandlerTabComponent<ISqlEditorTabState> = observer(function SqlEditorTab({ tab, onSelect, onClose }) {
   const viewContext = useContext(CaptureViewContext);
   const tabMenuContext = useDataContext(viewContext);
+  const handlerState = tab.handlerState;
 
-  tabMenuContext.set(DATA_CONTEXT_SQL_EDITOR_TAB, true);
-  tabMenuContext.set(DATA_CONTEXT_SQL_EDITOR_STATE, tab.handlerState);
+  useDataContextLink(tabMenuContext, (context, id) => {
+    context.set(DATA_CONTEXT_SQL_EDITOR_TAB, true, id);
+    context.set(DATA_CONTEXT_SQL_EDITOR_STATE, handlerState, id);
+  });
 
   const sqlDataSourceService = useService(SqlDataSourceService);
   const connectionInfo = useService(ConnectionInfoResource);
+  const projectInfo = useService(ProjectInfoResource);
 
   const translate = useTranslate();
 
-  const dataSource = sqlDataSourceService.get(tab.handlerState.editorId);
-  let connection: Connection | undefined;
+  const dataSource = sqlDataSourceService.get(handlerState.editorId);
   const executionContext = dataSource?.executionContext;
+  const project = executionContext ? projectInfo.get(executionContext.projectId) : undefined;
+  const connection = executionContext
+    ? connectionInfo.get(createConnectionParam(executionContext.projectId, executionContext.connectionId))
+    : undefined;
 
-  if (executionContext) {
-    connection = connectionInfo.get(createConnectionParam(executionContext.projectId, executionContext.connectionId));
-  }
-
-  const name = getSqlEditorName(tab.handlerState, dataSource, connection);
+  const name = getSqlEditorName(handlerState, dataSource, connection);
   const icon = dataSource?.icon ?? '/icons/sql_script_m.svg';
   const saved = dataSource?.isSaved !== false;
   const isScript = dataSource?.hasFeature(ESqlDataSourceFeatures.script);
@@ -56,8 +60,10 @@ export const SqlEditorTab: TabHandlerTabComponent<ISqlEditorTabState> = observer
   const handleSelect = ({ tabId }: ITabData<any>) => onSelect(tabId);
   const handleClose = onClose ? ({ tabId }: ITabData<any>) => onClose(tabId) : undefined;
 
+  const tooltip = useObjectInfoTooltip(connection?.name, executionContext?.defaultCatalog, executionContext?.defaultSchema, project?.name);
+
   return (
-    <Tab tabId={tab.id} title={name} menuContext={tabMenuContext} onOpen={handleSelect} onClose={handleClose}>
+    <Tab tabId={tab.id} title={`${name}${tooltip ? '\n' + tooltip : ''}`} menuContext={tabMenuContext} onOpen={handleSelect} onClose={handleClose}>
       <TabIcon icon={icon} />
       <TabTitle>{name}</TabTitle>
       {isReadonly && isScript && (

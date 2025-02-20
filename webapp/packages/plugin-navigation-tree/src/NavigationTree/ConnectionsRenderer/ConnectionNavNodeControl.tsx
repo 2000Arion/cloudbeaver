@@ -17,22 +17,22 @@ import {
   TreeNodeControl,
   TreeNodeIcon,
   TreeNodeName,
-  useMouseContextMenu,
+  useContextMenuPosition,
   useS,
 } from '@cloudbeaver/core-blocks';
 import { useService } from '@cloudbeaver/core-di';
 import { EventContext, EventStopPropagationFlag } from '@cloudbeaver/core-events';
 import { EObjectFeature, NavNodeInfoResource, NavTreeResource } from '@cloudbeaver/core-navigation-tree';
 
-import type { NavTreeControlComponent, NavTreeControlProps } from '../ElementsTree/NavigationNodeComponent';
-import style from '../ElementsTree/NavigationTreeNode/NavigationNode/NavigationNodeControl.m.css';
-import { NavigationNodeExpand } from '../ElementsTree/NavigationTreeNode/NavigationNode/NavigationNodeExpand';
-import { TreeNodeMenuLoader } from '../ElementsTree/NavigationTreeNode/TreeNodeMenu/TreeNodeMenuLoader';
+import type { NavTreeControlComponent, NavTreeControlProps } from '../ElementsTree/NavigationNodeComponent.js';
+import style from '../ElementsTree/NavigationTreeNode/NavigationNode/NavigationNodeControl.module.css';
+import { NavigationNodeExpand } from '../ElementsTree/NavigationTreeNode/NavigationNode/NavigationNodeExpand.js';
+import { TreeNodeMenuLoader } from '../ElementsTree/NavigationTreeNode/TreeNodeMenu/TreeNodeMenuLoader.js';
 
 export const ConnectionNavNodeControl: NavTreeControlComponent = observer<NavTreeControlProps, HTMLDivElement>(
   forwardRef(function ConnectionNavNodeControl({ node, nodeInfo, dndElement, dndPlaceholder, className, onClick }, ref) {
     const styles = useS(style);
-    const mouseContextMenu = useMouseContextMenu();
+    const contextMenuPosition = useContextMenuPosition();
     const treeNodeContext = useContext(TreeNodeContext);
     const navNodeInfoResource = useService(NavNodeInfoResource);
     const navTreeResource = useService(NavTreeResource);
@@ -55,9 +55,11 @@ export const ConnectionNavNodeControl: NavTreeControlComponent = observer<NavTre
     }
 
     function handleContextMenuOpen(event: React.MouseEvent<HTMLDivElement>) {
-      mouseContextMenu.handleContextMenuOpen(event);
+      contextMenuPosition.handleContextMenuOpen(event);
       treeNodeContext.select();
     }
+
+    const temporary = node.objectFeatures.includes(EObjectFeature.dataSourceTemporary);
 
     return (
       <TreeNodeControl
@@ -70,14 +72,14 @@ export const ConnectionNavNodeControl: NavTreeControlComponent = observer<NavTre
         <TreeNodeIcon>
           <ConnectionImageWithMask icon={icon} connected={connected} maskId="tree-node-icon" />
         </TreeNodeIcon>
-        <TreeNodeName title={title} className={s(styles, { treeNodeName: true })}>
+        <TreeNodeName title={title} className={s(styles, { treeNodeName: true, temporary })}>
           <Loader suspense inline fullSize>
             <div className={s(styles, { nameBox: true })}>{name}</div>
           </Loader>
         </TreeNodeName>
         {!dndPlaceholder && (
           <div className={s(styles, { portal: true })} onClick={handlePortalClick}>
-            <TreeNodeMenuLoader mouseContextMenu={mouseContextMenu} node={node} selected={selected} />
+            <TreeNodeMenuLoader contextMenuPosition={contextMenuPosition} node={node} selected={selected} />
           </div>
         )}
       </TreeNodeControl>

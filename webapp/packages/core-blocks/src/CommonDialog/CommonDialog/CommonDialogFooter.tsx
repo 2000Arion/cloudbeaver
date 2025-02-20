@@ -7,9 +7,9 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { s } from '../../s';
-import { useS } from '../../useS';
-import styles from './CommonDialogFooter.m.css';
+import { s } from '../../s.js';
+import { useS } from '../../useS.js';
+import styles from './CommonDialogFooter.module.css';
 
 interface Props {
   className?: string;

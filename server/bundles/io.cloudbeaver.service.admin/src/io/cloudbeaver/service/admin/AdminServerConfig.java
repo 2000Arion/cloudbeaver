@@ -16,7 +16,7 @@
  */
 package io.cloudbeaver.service.admin;
 
-import io.cloudbeaver.server.CBAppConfig;
+import io.cloudbeaver.model.config.CBAppConfig;
 import io.cloudbeaver.server.CBApplication;
 import org.jkiss.dbeaver.model.data.json.JSONUtils;
 
@@ -37,6 +37,7 @@ public class AdminServerConfig {
 
     private final boolean anonymousAccessEnabled;
     private final boolean resourceManagerEnabled;
+    private final boolean secretManagerEnabled;
     private final boolean customConnectionsEnabled;
     private final boolean publicCredentialsSaveEnabled;
     private final boolean adminCredentialsSaveEnabled;
@@ -59,6 +60,7 @@ public class AdminServerConfig {
         this.publicCredentialsSaveEnabled = JSONUtils.getBoolean(params, "publicCredentialsSaveEnabled", appConfig.isPublicCredentialsSaveEnabled());
         this.adminCredentialsSaveEnabled = JSONUtils.getBoolean(params, "adminCredentialsSaveEnabled", appConfig.isAdminCredentialsSaveEnabled());
         this.resourceManagerEnabled = JSONUtils.getBoolean(params, "resourceManagerEnabled", appConfig.isResourceManagerEnabled());
+        this.secretManagerEnabled = JSONUtils.getBoolean(params, "secretManagerEnabled", appConfig.isSecretManagerEnabled());
 
         if (params.containsKey("enabledFeatures")) {
             this.enabledFeatures = JSONUtils.getStringList(params, "enabledFeatures");
@@ -161,5 +163,9 @@ public class AdminServerConfig {
 
     public boolean isResourceManagerEnabled() {
         return resourceManagerEnabled;
+    }
+
+    public boolean isSecretManagerEnabled() {
+        return secretManagerEnabled;
     }
 }

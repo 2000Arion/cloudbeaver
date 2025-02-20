@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  */
 import { Dependency, injectable } from '@cloudbeaver/core-di';
-import { SettingsManagerService, SettingsProvider, SettingsProviderService } from '@cloudbeaver/core-settings';
+import { SettingsProvider, SettingsProviderService } from '@cloudbeaver/core-settings';
 import { schema, schemaExtra } from '@cloudbeaver/core-utils';
 
 const defaultSettings = schema.object({
@@ -22,10 +22,7 @@ export class PluginConnectionsSettingsService extends Dependency {
   }
   readonly settings: SettingsProvider<typeof defaultSettings>;
 
-  constructor(
-    private readonly settingsProviderService: SettingsProviderService,
-    private readonly settingsManagerService: SettingsManagerService,
-  ) {
+  constructor(private readonly settingsProviderService: SettingsProviderService) {
     super();
     this.settings = this.settingsProviderService.createSettings(defaultSettings);
 
@@ -33,14 +30,18 @@ export class PluginConnectionsSettingsService extends Dependency {
   }
 
   private registerSettings() {
-    this.settingsManagerService.registerSettings(this.settings, () => [
-      // {
-      //   key: 'hideConnectionViewForUsers',
-      //   type: ESettingsValueType.Checkbox,
-      //   name: 'settings_connections_hide_connections_view_name',
-      //   description: 'settings_connections_hide_connections_view_description',
-      //   group: CONNECTIONS_SETTINGS_GROUP,
-      // },
-    ]);
+    // todo: probably not working as a separate setting
+    // this.settingsManagerService.registerSettings(this.settings, () => [
+    //   {
+    //     key: 'plugin.connections.hideConnectionViewForUsers',
+    //     type: ESettingsValueType.Checkbox,
+    //     access: {
+    //       scope: ['server'],
+    //     },
+    //     name: 'plugin_connections_settings_hide_connections_view_name',
+    //     description: 'plugin_connections_settings_hide_connections_view_description',
+    //     group: CONNECTIONS_SETTINGS_GROUP,
+    //   },
+    // ]);
   }
 }

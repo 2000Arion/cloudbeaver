@@ -5,12 +5,12 @@
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
  */
-import type { ButtonProps } from 'reakit/ts';
+import type { ButtonProps } from 'reakit';
 
-import { IconButton } from '../IconButton';
-import { s } from '../s';
-import { useS } from '../useS';
-import moduleStyles from './MenuBarSmallItem.m.css';
+import { IconButton } from '../IconButton.js';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import moduleStyles from './MenuBarSmallItem.module.css';
 
 interface Props extends Omit<ButtonProps, 'style' | 'icon'> {
   icon?: string;

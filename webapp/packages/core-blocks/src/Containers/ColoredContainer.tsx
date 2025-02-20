@@ -7,13 +7,13 @@
  */
 import { forwardRef } from 'react';
 
-import { s } from '../s';
-import { useS } from '../useS';
-import coloredContainerStyles from './ColoredContainer.m.css';
-import containerStyles from './Container.m.css';
-import { filterContainerFakeProps, getContainerProps } from './filterContainerFakeProps';
-import type { IContainerProps } from './IContainerProps';
-import elementsSizeStyles from './shared/ElementsSize.m.css';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import coloredContainerStyles from './ColoredContainer.module.css';
+import containerStyles from './Container.module.css';
+import { filterContainerFakeProps, getContainerProps } from './filterContainerFakeProps.js';
+import type { IContainerProps } from './IContainerProps.js';
+import elementsSizeStyles from './shared/ElementsSize.module.css';
 
 interface Props extends IContainerProps, React.HTMLAttributes<HTMLDivElement> {
   surface?: boolean;
