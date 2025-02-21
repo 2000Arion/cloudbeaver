@@ -9,16 +9,16 @@ import { injectable } from '@cloudbeaver/core-di';
 import { ExecutorInterrupter } from '@cloudbeaver/core-executor';
 import { ProjectsService } from '@cloudbeaver/core-projects';
 import { CachedMapAllKey, CachedMapResource, type ResourceKey, resourceKeyList, ResourceKeyUtils } from '@cloudbeaver/core-resource';
-import { GraphQLService, SqlDialectInfo } from '@cloudbeaver/core-sdk';
+import { GraphQLService, type SqlDialectInfo } from '@cloudbeaver/core-sdk';
 
-import type { IConnectionInfoParams } from './CONNECTION_INFO_PARAM_SCHEMA';
-import type { IConnectionExecutionContextInfo } from './ConnectionExecutionContext/ConnectionExecutionContextResource';
+import type { IConnectionInfoParams } from './CONNECTION_INFO_PARAM_SCHEMA.js';
+import type { IConnectionExecutionContextInfo } from './ConnectionExecutionContext/ConnectionExecutionContextResource.js';
 import {
   ConnectionInfoActiveProjectKey,
   ConnectionInfoProjectKey,
   ConnectionInfoResource,
   isConnectionInfoParamEqual,
-} from './ConnectionInfoResource';
+} from './ConnectionInfoResource.js';
 
 export type ConnectionDialect = SqlDialectInfo;
 
@@ -26,7 +26,7 @@ export type ConnectionDialect = SqlDialectInfo;
 export class ConnectionDialectResource extends CachedMapResource<IConnectionInfoParams, ConnectionDialect> {
   constructor(
     private readonly graphQLService: GraphQLService,
-    private readonly projectsService: ProjectsService,
+    projectsService: ProjectsService,
     connectionInfoResource: ConnectionInfoResource,
   ) {
     super();
@@ -78,7 +78,7 @@ export class ConnectionDialectResource extends CachedMapResource<IConnectionInfo
     return this.data;
   }
 
-  isKeyEqual(param: IConnectionInfoParams, second: IConnectionInfoParams): boolean {
+  override isKeyEqual(param: IConnectionInfoParams, second: IConnectionInfoParams): boolean {
     return isConnectionInfoParamEqual(param, second);
   }
 

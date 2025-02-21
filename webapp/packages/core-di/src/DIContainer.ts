@@ -5,17 +5,16 @@
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
  */
-import { Container, interfaces } from 'inversify';
+import { Container, type interfaces } from 'inversify';
 
-import type { IServiceCollection, IServiceConstructor, IServiceInjector } from './IApp';
-import type { InjectionToken } from './InjectionToken';
-import { isConstructor } from './isConstructor';
+import type { IServiceCollection, IServiceConstructor, IServiceInjector } from './IApp.js';
 
 function logger(planAndResolve: interfaces.Next): interfaces.Next {
   return (args: interfaces.NextArgs) => {
     try {
       return planAndResolve(args);
     } catch (exception: any) {
+      // @ts-ignore
       let metadata: Array<() => void> = Reflect.getMetadata('design:paramtypes', args.serviceIdentifier) || [];
       const matchIndex = /argument\s(\d+)/.exec((exception as Error).message);
       const matchDependency = /(serviceIdentifier:|class)\s([\w]+)/.exec((exception as Error).message);
@@ -34,9 +33,10 @@ function logger(planAndResolve: interfaces.Next): interfaces.Next {
       let notFoundElement = dep;
 
       if (index !== -1) {
+        // @ts-ignore
         metadata = Reflect.getMetadata('design:paramtypes', dep) || [];
         serviceName = dep.name;
-        notFoundElement = metadata[index];
+        notFoundElement = metadata[index]!;
       } else {
         index = metadata.indexOf(notFoundElement);
       }
@@ -100,10 +100,6 @@ export class DIContainer implements IServiceInjector, IServiceCollection {
     return this.container.get<T>(ctor);
   }
 
-  getServiceByToken<T>(token: InjectionToken<T>): T {
-    return this.container.get<T>(token);
-  }
-
   resolveServiceByClass<T>(ctor: IServiceConstructor<T>): T {
     return this.container.resolve(ctor);
   }
@@ -113,14 +109,6 @@ export class DIContainer implements IServiceInjector, IServiceCollection {
       this.container.bind(Ctor).toConstantValue(value);
     } else {
       this.container.bind(Ctor).toSelf();
-    }
-  }
-
-  addServiceByToken<T extends Record<string, any>>(token: InjectionToken<T>, value: T | IServiceConstructor<T>): void {
-    if (isConstructor(value)) {
-      this.container.bind(token).to(value as IServiceConstructor<T>);
-    } else {
-      this.container.bind(token).toConstantValue(value);
     }
   }
 }

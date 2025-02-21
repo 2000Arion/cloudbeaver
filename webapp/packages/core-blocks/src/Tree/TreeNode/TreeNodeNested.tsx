@@ -8,9 +8,9 @@
 import { observer } from 'mobx-react-lite';
 import { forwardRef } from 'react';
 
-import { s } from '../../s';
-import { useS } from '../../useS';
-import style from './TreeNodeNested.m.css';
+import { s } from '../../s.js';
+import { useS } from '../../useS.js';
+import style from './TreeNodeNested.module.css';
 
 interface Props extends React.PropsWithChildren {
   root?: boolean;

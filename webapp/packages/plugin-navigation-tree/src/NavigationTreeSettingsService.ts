@@ -43,9 +43,13 @@ export class NavigationTreeSettingsService extends Dependency {
     this.settingsManagerService.registerSettings(this.settings, () => [
       // {
       //   group: NAVIGATION_TREE_SETTINGS_GROUP,
-      //   key: 'disabled',
+      //   key: 'plugin.navigation-tree.disabled',
+      //   access: {
+      //     scope: ['server'],
+      //   },
       //   type: ESettingsValueType.Checkbox,
-      //   name: 'Disable navigation tree',
+      //   name: 'plugin_navigation_tree_settings_disable',
+      //   description: 'plugin_navigation_tree_settings_disable_description',
       // },
     ]);
   }

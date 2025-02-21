@@ -10,8 +10,8 @@ import { useState } from 'react';
 
 import { Button, Container, Form, Group, GroupTitle, InputField, s, Table, TableBody, useS } from '@cloudbeaver/core-blocks';
 
-import styles from './GroupingColumnEditorTable.m.css';
-import { GroupingTableItem } from './GroupingTableItem';
+import styles from './GroupingColumnEditorTable.module.css';
+import { GroupingTableItem } from './GroupingTableItem.js';
 
 interface Props {
   title: string;

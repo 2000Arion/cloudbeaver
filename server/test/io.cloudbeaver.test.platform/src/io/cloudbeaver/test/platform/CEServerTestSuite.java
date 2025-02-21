@@ -17,19 +17,13 @@
 
 package io.cloudbeaver.test.platform;
 
+import io.cloudbeaver.app.CEAppStarter;
 import io.cloudbeaver.model.rm.RMNIOTest;
 import io.cloudbeaver.model.rm.lock.RMLockTest;
-import io.cloudbeaver.server.CBApplication;
-import io.cloudbeaver.server.CBApplicationCE;
-import io.cloudbeaver.utils.WebTestUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-
-import java.net.CookieManager;
-import java.net.http.HttpClient;
-import java.nio.file.Path;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses(
@@ -44,67 +38,13 @@ import java.nio.file.Path;
 )
 public class CEServerTestSuite {
 
-    public static final String GQL_API_URL = "http://localhost:18978/api/gql";
-    public static final String SERVER_STATUS_URL = "http://localhost:18978/status";
-
-    private static boolean setUpIsDone = false;
-    private static boolean testFinished = false;
-
-    private static CBApplication testApp;
-    private static HttpClient client;
-    private static Path scriptsPath;
-    private static Thread thread;
-
     @BeforeClass
     public static void startServer() throws Exception {
-        if (setUpIsDone) {
-            return;
-        } else {
-            System.out.println("Start CBApplication");
-            testApp = new CBApplicationCE();
-            thread = new Thread(() -> {
-                testApp.start(null);
-            });
-            thread.start();
-            client = createClient();
-            long startTime = System.currentTimeMillis();
-            long endTime = 0;
-            while (true) {
-                setUpIsDone = WebTestUtils.getServerStatus(client, SERVER_STATUS_URL);
-                endTime = System.currentTimeMillis() - startTime;
-                if (setUpIsDone || endTime > 300000) {
-                    break;
-                }
-            }
-            if (!setUpIsDone) {
-                throw new Exception("Server is not running");
-            }
-            scriptsPath = Path.of(testApp.getHomeDirectory().toString(), "/workspace/gql_scripts")
-                .toAbsolutePath();
-        }
+        CEAppStarter.startServerIfNotStarted();
     }
 
     @AfterClass
     public static void shutdownServer() {
-        testApp.stop();
-    }
-
-    public static CBApplication getTestApp() {
-        return testApp;
-    }
-
-    public static HttpClient getClient() {
-        return client;
-    }
-
-    public static HttpClient createClient() {
-        return HttpClient.newBuilder()
-            .cookieHandler(new CookieManager())
-            .version(HttpClient.Version.HTTP_2)
-            .build();
-    }
-
-    public static Path getScriptsPath() {
-        return scriptsPath;
+        CEAppStarter.shutdownServer();
     }
 }

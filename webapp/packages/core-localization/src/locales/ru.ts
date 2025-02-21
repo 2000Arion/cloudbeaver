@@ -1,6 +1,6 @@
 /*
  * CloudBeaver - Cloud Database Manager
- * Copyright (C) 2020-2024 DBeaver Corp and others
+ * Copyright (C) 2020-2025 DBeaver Corp and others
  *
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@ export default [
   ['ui_dark_theme', 'Темная'],
   ['ui_stepper_back', 'Назад'],
   ['ui_load_more', 'Загрузить ещё'],
+  ['ui_processing_connecting', 'Подключение...'],
   ['ui_processing_loading', 'Загрузка...'],
   ['ui_processing_cancel', 'Отменить'],
   ['ui_processing_canceling', 'Отмена...'],
@@ -36,6 +37,8 @@ export default [
   ['ui_custom', 'Настроить'],
   ['ui_configure', 'Настроить'],
   ['ui_apply', 'Применить'],
+  ['ui_cancel', 'Отменить'],
+  ['ui_reject', 'Отклонить'],
   ['ui_ignore', 'Пропустить'],
   ['ui_error', 'Ошибка'],
   ['ui_error_message', 'Ошибка:'],
@@ -47,7 +50,12 @@ export default [
   ['ui_errors_details', 'Информация'],
   ['ui_search', 'Поиск...'],
   ['ui_delete', 'Удалить'],
+  ['ui_deleting', 'Удаляется...'],
   ['ui_add', 'Добавить'],
+  ['ui_revert', 'Отменить изменения'],
+  ['ui_undo', 'Отменить'],
+  ['ui_redo', 'Повторить'],
+  ['ui_duplicate', 'Дублировать'],
   ['ui_refresh', 'Обновить'],
   ['ui_data_saving_error', 'Ошибка при сохранении изменений'],
   ['ui_no_matches_placeholder', 'По вашему запросу ничего не найдено.'],
@@ -74,6 +82,8 @@ export default [
   ['ui_folder_new', 'Новая папка'],
   ['ui_rename_processing', 'Переименование...'],
   ['ui_name', 'Название'],
+  ['ui_value', 'Значение'],
+  ['ui_description', 'Описание'],
   ['ui_interval', 'Интервал'],
   ['ui_cant_delete_item', 'Этот элемент нельзя удалить'],
   ['ui_no_items_placeholder', 'Вы еще ничего не добавили.'],
@@ -100,7 +110,7 @@ export default [
   ['ui_close_others', 'Закрыть другие'],
   ['ui_close_all_to_the_right', 'Закрыть все справа'],
   ['ui_close_all_to_the_left', 'Закрыть все слева'],
-  ['ui_or', 'Или'],
+  ['ui_or', 'или'],
   ['ui_download', 'Cкачать'],
   ['ui_download_file', 'Скачать файл'],
   ['ui_upload', 'Загрузить'],
@@ -122,6 +132,13 @@ export default [
   ['ui_test', 'Проверить'],
   ['ui_export', 'Экспорт'],
   ['ui_you', 'Вы'],
+  ['ui_ms', 'мс'],
+  ['ui_not_found', 'Не найдено'],
+  ['ui_connection', 'Подключение'],
+  ['ui_catalog', 'Каталог'],
+  ['ui_schema', 'Схема'],
+  ['ui_project', 'Проект'],
+  ['ui_type', 'Тип'],
 
   ['root_permission_denied', 'Отказано в доступе'],
   ['root_permission_no_permission', 'У вас нет разрешения на это действие'],

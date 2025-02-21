@@ -8,32 +8,32 @@
 import { action, comparer, computed, observable, reaction, toJS, untracked } from 'mobx';
 import { useContext, useDeferredValue, useEffect, useState } from 'react';
 
-import { IServiceConstructor, useService } from '@cloudbeaver/core-di';
+import { type IServiceConstructor, useService } from '@cloudbeaver/core-di';
 import {
   CachedDataResource,
-  CachedDataResourceGetter,
+  type CachedDataResourceGetter,
   CachedMapResource,
-  CachedMapResourceGetter,
-  CachedMapResourceListGetter,
-  CachedMapResourceLoader,
-  CachedMapResourceValue,
-  CachedResourceContext,
-  CachedResourceData,
-  CachedResourceKey,
-  IResource,
+  type CachedMapResourceGetter,
+  type CachedMapResourceListGetter,
+  type CachedMapResourceLoader,
+  type CachedMapResourceValue,
+  type CachedResourceContext,
+  type CachedResourceData,
+  type CachedResourceKey,
+  type IResource,
   isResourceKeyList,
   isResourceKeyListAlias,
   Resource,
-  ResourceKey,
+  type ResourceKey,
   ResourceKeyList,
   ResourceKeyListAlias,
 } from '@cloudbeaver/core-resource';
-import { ILoadableState, isArraysEqual, isContainsException, LoadingError } from '@cloudbeaver/core-utils';
+import { type ILoadableState, isArraysEqual, isContainsException, LoadingError } from '@cloudbeaver/core-utils';
 
-import { ErrorContext } from '../ErrorContext';
-import { getComputed } from '../getComputed';
-import { useObjectRef } from '../useObjectRef';
-import { useObservableRef } from '../useObservableRef';
+import { ErrorContext } from '../ErrorContext.js';
+import { getComputed } from '../getComputed.js';
+import { useObjectRef } from '../useObjectRef.js';
+import { useObservableRef } from '../useObservableRef.js';
 
 export interface ResourceKeyWithIncludes<TKey, TIncludes> {
   readonly key: TKey | null;
@@ -47,6 +47,8 @@ type ResourceData<TResource extends IResource<any, any, any, any>, TKey, TInclud
 
 interface IActions<TResource extends IResource<any, any, any, any>, TKey, TIncludes> {
   active?: boolean;
+  /** Indicates whether the resource should be loadable without modifying data, unlike the "active" field */
+  freeze?: boolean;
   forceSuspense?: boolean;
   silent?: boolean;
   onData?: (data: ResourceData<TResource, TKey, TIncludes>, resource: TResource) => any;
@@ -184,6 +186,7 @@ export function useResource<
       }
       return propertiesRef.resource.get(propertiesRef.key);
     }
+
     return propertiesRef.resource.data;
   }
 
@@ -290,6 +293,10 @@ export function useResource<
     () => ({
       preloaded,
       get canLoad(): boolean {
+        if (actions?.freeze) {
+          return false;
+        }
+
         return propertiesRef.key !== null && this.preloaded && this.outdated && !this.loading;
       },
       get resource() {

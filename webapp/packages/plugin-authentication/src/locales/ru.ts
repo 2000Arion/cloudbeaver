@@ -23,9 +23,10 @@ export default [
   ['authentication_provider_disabled', 'Способ аутентификации отключен'],
   ['authentication_request_token', 'Необходима дополнительная аутентификация'],
   ['authentication_identity_provider_search_placeholder', 'Поиск по имени или описанию конфигурации...'],
-  ['authentication_identity_provider_dialog_subtitle', 'Выберите конфигурацию с помощью которой вы хотите войти'],
+  ['authentication_identity_provider_dialog_subtitle', 'Выберите конфигурацию, с помощью которой вы хотите войти'],
 
   ['authentication_user_name', 'Имя'],
+  ['authentication_user_name_description', 'Идентификатор пользователя хранится в нижнем регистре'],
   ['authentication_user_role', 'Роль'],
   ['authentication_user_credentials', 'Учетные данные'],
   ['authentication_user_meta_parameters', 'Параметры'],

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  */
 import { observer } from 'mobx-react-lite';
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   Button,
@@ -20,7 +20,7 @@ import {
 } from '@cloudbeaver/core-blocks';
 import type { DialogComponent, DialogComponentProps } from '@cloudbeaver/core-dialogs';
 
-import style from './EditorDialog.m.css';
+import style from './EditorDialog.module.css';
 
 export const EditorDialog: DialogComponent<string, string> = observer(function EditorDialog({
   payload,

@@ -8,11 +8,11 @@
 import { injectable } from '@cloudbeaver/core-di';
 import { LocalizationService } from '@cloudbeaver/core-localization';
 import { CachedDataResource } from '@cloudbeaver/core-resource';
-import { GraphQLService, SessionStateFragment } from '@cloudbeaver/core-sdk';
+import { GraphQLService, type SessionStateFragment } from '@cloudbeaver/core-sdk';
 
-import { ServerConfigResource } from './ServerConfigResource';
-import { ServerEventId } from './SessionEventSource';
-import { type ISessionStateEvent, SessionInfoEventHandler } from './SessionInfoEventHandler';
+import { ServerConfigResource } from './ServerConfigResource.js';
+import { ServerEventId } from './SessionEventSource.js';
+import { type ISessionStateEvent, SessionInfoEventHandler } from './SessionInfoEventHandler.js';
 
 export type SessionState = SessionStateFragment;
 export interface ISessionAction {
@@ -74,7 +74,8 @@ export class SessionResource extends CachedDataResource<SessionState | null> {
 
   async changeLanguage(locale: string): Promise<void> {
     await this.load();
-    if (this.data?.locale === locale) {
+    //TODO we check "!locale" because of the bug described in CB-6048, should be removed when fixed
+    if (this.data?.locale === locale || !locale) {
       return;
     }
     await this.graphQLService.sdk.changeSessionLanguage({ locale });
@@ -100,7 +101,7 @@ export class SessionResource extends CachedDataResource<SessionState | null> {
     this.sessionInfoEventHandler.pingSession();
   }
 
-  protected setData(data: SessionState | null) {
+  protected override setData(data: SessionState | null) {
     if (!this.action) {
       this.action = data?.actionParameters;
     }

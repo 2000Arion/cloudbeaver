@@ -7,9 +7,9 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { s } from '../../s';
-import { useS } from '../../useS';
-import styles from './CommonDialogBody.m.css';
+import { s } from '../../s.js';
+import { useS } from '../../useS.js';
+import styles from './CommonDialogBody.module.css';
 
 interface Props {
   noBodyPadding?: boolean;

@@ -10,10 +10,10 @@ import { useContext, useEffect, useRef } from 'react';
 import { FormContext, getComputed, useExecutor, useObjectRef } from '@cloudbeaver/core-blocks';
 import { ExecutorHandlersCollection } from '@cloudbeaver/core-executor';
 
-import { TabsContext } from './TabsContext';
-import { TabsValidationContext } from './TabsValidationContext';
+import { TabsContext } from './TabsContext.js';
+import { TabsValidationContext } from './TabsValidationContext.js';
 
-export function useTabsValidation(tabId: string): React.RefObject<HTMLDivElement> {
+export function useTabsValidation(tabId: string): React.RefObject<HTMLDivElement | null> {
   const tabContextState = useContext(TabsContext);
   const formContext = useContext(FormContext);
 

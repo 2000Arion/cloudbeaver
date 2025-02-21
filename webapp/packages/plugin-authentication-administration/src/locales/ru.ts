@@ -23,7 +23,7 @@ export default [
   ['authentication_administration_user_auth_methods', 'Способы входа'],
   ['authentication_administration_user_auth_methods_empty', 'Нет доступных способов входа'],
   ['authentication_administration_user_auth_method_no_details', 'Дополнительная информация не доступна'],
-  ['authentication_administration_item', 'Управление доступом'],
+  ['authentication_administration_item', 'Пользователи и команды'],
   ['authentication_administration_item_users', 'Пользователи'],
   ['authentication_administration_item_metaParameters', 'Свойства Пользователей'],
   ['authentication_administration_tools_add_tooltip', 'Создать нового пользователя'],
@@ -97,6 +97,7 @@ export default [
   ['administration_identity_providers_wizard_description', 'Добавьте провайдеры идентификации'],
   ['administration_identity_providers_configuration_add', 'Создание конфигурации'],
   ['administration_identity_providers_choose_provider_placeholder', 'Выберите провайдер...'],
+  ['administration_identity_providers_choose_provider_placeholder_empty', 'Нет доступных провайдеров'],
   ['administration_identity_providers_add_tooltip', 'Добавить новую конфигурацию'],
   ['administration_identity_providers_refresh_tooltip', 'Обновить список конфигураций'],
   ['administration_identity_providers_delete_tooltip', 'Удалить выбранные конфигурации'],
@@ -149,4 +150,7 @@ export default [
     'plugin_authentication_administration_team_user_team_role_supervisor_description',
     'Супервайзеры могут просматривать выполненные запросы своей команды',
   ],
+
+  ['plugin_authentication_administration_team_form_edit_label', 'Форма редактирования команды'],
+  ['plugin_authentication_administration_user_form_edit_label', 'Форма редактирования пользователя'],
 ];

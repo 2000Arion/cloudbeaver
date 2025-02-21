@@ -1,6 +1,6 @@
 /*
  * DBeaver - Universal Database Manager
- * Copyright (C) 2010-2024 DBeaver Corp and others
+ * Copyright (C) 2010-2025 DBeaver Corp and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import io.cloudbeaver.DBWebException;
 import io.cloudbeaver.model.WebConnectionInfo;
 import io.cloudbeaver.model.session.WebSession;
 import io.cloudbeaver.model.session.WebSessionProvider;
-import io.cloudbeaver.server.CBPlatform;
+import io.cloudbeaver.server.WebAppUtils;
 import io.cloudbeaver.server.jobs.SqlOutputLogReaderJob;
 import org.eclipse.jface.text.Document;
 import org.jkiss.code.NotNull;
@@ -41,12 +41,14 @@ import org.jkiss.dbeaver.model.impl.AbstractExecutionSource;
 import org.jkiss.dbeaver.model.impl.DefaultServerOutputReader;
 import org.jkiss.dbeaver.model.navigator.DBNDatabaseItem;
 import org.jkiss.dbeaver.model.navigator.DBNNode;
+import org.jkiss.dbeaver.model.qm.QMUtils;
 import org.jkiss.dbeaver.model.runtime.DBRProgressMonitor;
 import org.jkiss.dbeaver.model.sql.*;
 import org.jkiss.dbeaver.model.sql.parser.SQLParserContext;
 import org.jkiss.dbeaver.model.sql.parser.SQLRuleManager;
 import org.jkiss.dbeaver.model.sql.parser.SQLScriptParser;
 import org.jkiss.dbeaver.model.struct.*;
+import org.jkiss.dbeaver.model.websocket.event.WSTransactionalCountEvent;
 import org.jkiss.dbeaver.utils.GeneralUtils;
 import org.jkiss.utils.ArrayUtils;
 import org.jkiss.utils.CommonUtils;
@@ -164,7 +166,7 @@ public class WebSQLProcessor implements WebSessionProvider {
         @Nullable WebSQLDataFilter filter,
         @Nullable WebDataFormat dataFormat,
         @NotNull WebSession webSession,
-        boolean readLogs) throws DBWebException {
+        boolean readLogs) throws DBWebException, DBCException {
         if (filter == null) {
             // Use default filter
             filter = new WebSQLDataFilter();
@@ -200,10 +202,15 @@ public class WebSQLProcessor implements WebSessionProvider {
             SQLScriptElement element = SQLScriptParser.extractActiveQuery(parserContext, 0, sql.length());
 
             if (element instanceof SQLControlCommand command) {
-                dataContainer.getScriptContext().executeControlCommand(command);
-                WebSQLQueryResults stats = new WebSQLQueryResults(webSession, dataFormat);
-                executeInfo.setResults(new WebSQLQueryResults[]{stats});
-            } else if (element instanceof SQLQuery sqlQuery) {
+                SQLControlResult controlResult = dataContainer.getScriptContext().executeControlCommand(monitor, command);
+                if (controlResult.getTransformed() != null) {
+                    element = controlResult.getTransformed();
+                } else {
+                    WebSQLQueryResults stats = new WebSQLQueryResults(webSession, dataFormat);
+                    executeInfo.setResults(new WebSQLQueryResults[]{stats});
+                }
+            }
+            if (element instanceof SQLQuery sqlQuery) {
                 DBExecUtils.tryExecuteRecover(monitor, connection.getDataSource(), param -> {
                     try (DBCSession session = context.openSession(monitor, resolveQueryPurpose(dataFilter), "Execute SQL")) {
                         AbstractExecutionSource source = new AbstractExecutionSource(
@@ -259,10 +266,17 @@ public class WebSQLProcessor implements WebSessionProvider {
                         }
                     }
                 });
+            } else {
+                executeInfo.setResults(new WebSQLQueryResults[0]);
             }
         } catch (DBException e) {
             throw new DBWebException("Error executing query", e);
         }
+        DBCTransactionManager txnManager = DBUtils.getTransactionManager(context);
+        if (txnManager != null && !txnManager.isAutoCommit()) {
+            sendTransactionalEvent(contextInfo);
+        }
+
         executeInfo.setDuration(System.currentTimeMillis() - startTime);
         if (executeInfo.getResults().length == 0) {
             executeInfo.setStatusMessage("No Data");
@@ -307,7 +321,7 @@ public class WebSQLProcessor implements WebSessionProvider {
                     executeInfo.setResults(new WebSQLQueryResults[]{results});
                     setResultFilterText(dataContainer, session.getDataSource(), executeInfo, dataFilter);
                     executeInfo.setFullQuery(statistics.getQueryText());
-                    if (resultSet != null && resultSet.getRows() != null) {
+                    if (resultSet != null && resultSet.getRows() != null && resultSet.getResultsInfo() != null) {
                         resultSet.getResultsInfo().setQueryText(statistics.getQueryText());
                         executeInfo.setStatusMessage(resultSet.getRows().length + " row(s) fetched");
                     }
@@ -347,17 +361,17 @@ public class WebSQLProcessor implements WebSessionProvider {
 
         WebSQLExecuteInfo result = new WebSQLExecuteInfo();
         List<WebSQLQueryResults> queryResults = new ArrayList<>();
+        boolean isAutoCommitEnabled = true;
+
         for (var rowIdentifier : rowIdentifierList) {
             Map<DBSDataManipulator.ExecuteBatch, Object[]> resultBatches = new LinkedHashMap<>();
             DBSDataManipulator dataManipulator = generateUpdateResultsDataBatch(
                 monitor, resultsInfo, rowIdentifier, updatedRows, deletedRows, addedRows, dataFormat, resultBatches, keyReceiver);
 
-
             DBCExecutionContext executionContext = getExecutionContext(dataManipulator);
             try (DBCSession session = executionContext.openSession(monitor, DBCExecutionPurpose.USER, "Update data in container")) {
                 DBCTransactionManager txnManager = DBUtils.getTransactionManager(executionContext);
                 boolean revertToAutoCommit = false;
-                boolean isAutoCommitEnabled = true;
                 DBCSavepoint savepoint = null;
                 if (txnManager != null) {
                     isAutoCommitEnabled = txnManager.isAutoCommit();
@@ -414,6 +428,10 @@ public class WebSQLProcessor implements WebSessionProvider {
         }
         getUpdatedRowsInfo(resultsInfo, newResultSetRows, dataFormat, monitor);
 
+        if (!isAutoCommitEnabled) {
+            sendTransactionalEvent(contextInfo);
+        }
+
         WebSQLQueryResultSet updatedResultSet = new WebSQLQueryResultSet();
         updatedResultSet.setResultsInfo(resultsInfo);
         updatedResultSet.setColumns(resultsInfo.getAttributes());
@@ -428,6 +446,20 @@ public class WebSQLProcessor implements WebSessionProvider {
         result.setResults(queryResults.toArray(new WebSQLQueryResults[0]));
 
         return result;
+    }
+
+    private void sendTransactionalEvent(WebSQLContextInfo contextInfo) {
+        int count = QMUtils.getTransactionState(getExecutionContext()).getUpdateCount();
+        webSession.addSessionEvent(
+            new WSTransactionalCountEvent(
+                contextInfo.getWebSession().getSessionId(),
+                contextInfo.getWebSession().getUserId(),
+                contextInfo.getProjectId(),
+                contextInfo.getId(),
+                contextInfo.getConnectionId(),
+                count
+            )
+        );
     }
 
     private void getUpdatedRowsInfo(
@@ -793,6 +825,10 @@ public class WebSQLProcessor implements WebSessionProvider {
                     cellRawValue,
                     false,
                     true);
+                //FIXME: fix array editing for nosql databases
+                if (realCellValue == null && cellRawValue != null && updateAttribute.getDataKind() == DBPDataKind.ARRAY) {
+                    throw new DBCException("Array update is not supported");
+                }
             } catch (DBCException e) {
                 //checks if this function is used only for script generation
                 if (justGenerateScript) {
@@ -853,13 +889,18 @@ public class WebSQLProcessor implements WebSessionProvider {
         @NotNull WebSQLContextInfo contextInfo,
         @NotNull String resultsId,
         @NotNull Integer lobColumnIndex,
-        @Nullable WebSQLResultsRow row
+        @NotNull WebSQLResultsRow row
     ) throws DBException {
         WebSQLResultsInfo resultsInfo = contextInfo.getResults(resultsId);
 
         DBDRowIdentifier rowIdentifier = resultsInfo.getDefaultRowIdentifier();
-        checkRowIdentifier(resultsInfo, rowIdentifier);
-        String tableName = rowIdentifier.getEntity().getName();
+        String tableName;
+        if (rowIdentifier == null && resultsInfo.isSingleRow()) {
+            tableName = resultsInfo.getDataContainer().getName();
+        } else {
+            checkRowIdentifier(resultsInfo, rowIdentifier);
+            tableName = rowIdentifier.getEntity().getName();
+        }
         WebSQLDataLOBReceiver dataReceiver = new WebSQLDataLOBReceiver(tableName, resultsInfo.getDataContainer(), lobColumnIndex);
         readCellDataValue(monitor, resultsInfo, row, dataReceiver);
         try {
@@ -873,55 +914,75 @@ public class WebSQLProcessor implements WebSessionProvider {
         @NotNull DBRProgressMonitor monitor,
         @NotNull WebSQLResultsInfo resultsInfo,
         @Nullable WebSQLResultsRow row,
-        @NotNull WebSQLCellValueReceiver dataReceiver) throws DBException {
+        @NotNull WebSQLCellValueReceiver dataReceiver
+    ) throws DBException {
         DBSDataContainer dataContainer = resultsInfo.getDataContainer();
         DBCExecutionContext executionContext = getExecutionContext(dataContainer);
         try (DBCSession session = executionContext.openSession(monitor, DBCExecutionPurpose.USER, "Generate data update batches")) {
-            WebExecutionSource executionSource = new WebExecutionSource(dataContainer, executionContext, this);
             DBDDataFilter dataFilter = new DBDDataFilter();
-            DBDAttributeBinding[] keyAttributes = resultsInfo.getDefaultRowIdentifier().getAttributes().toArray(new DBDAttributeBinding[0]);
-            Object[] rowValues = new Object[keyAttributes.length];
-            List<DBDAttributeConstraint> constraints = new ArrayList<>();
-            for (int i = 0; i < keyAttributes.length; i++) {
-                DBDAttributeBinding keyAttribute = keyAttributes[i];
-                boolean isDocumentValue = keyAttributes.length == 1 && keyAttribute.getDataKind() == DBPDataKind.DOCUMENT && dataContainer instanceof DBSDocumentLocator;
-                if (isDocumentValue) {
-                    rowValues[i] =
-                        makeDocumentInputValue(session, (DBSDocumentLocator) dataContainer, resultsInfo, row, null);
-                } else {
-                    Object inputCellValue = row.getData()[keyAttribute.getOrdinalPosition()];
-
-                    rowValues[i] = keyAttribute.getValueHandler().getValueFromObject(
-                        session,
-                        keyAttribute,
-                        convertInputCellValue(session, keyAttribute,
-                            inputCellValue, false),
-                        false,
-                        true);
-                }
-                final DBDAttributeConstraint constraint = new DBDAttributeConstraint(keyAttribute);
-                constraint.setOperator(DBCLogicalOperator.EQUALS);
-                constraint.setValue(rowValues[i]);
-                constraints.add(constraint);
+            if (!resultsInfo.isSingleRow()) {
+                addKeyAttributes(resultsInfo, row, dataContainer, session, dataFilter);
             }
-            dataFilter.addConstraints(constraints);
-            DBCStatistics statistics = dataContainer.readData(
+            WebExecutionSource executionSource = new WebExecutionSource(dataContainer, executionContext, this);
+            dataContainer.readData(
                 executionSource, session, dataReceiver, dataFilter,
                 0, 1, DBSDataContainer.FLAG_NONE, 1);
         }
     }
 
+    private void addKeyAttributes(
+        @NotNull WebSQLResultsInfo resultsInfo,
+        @Nullable WebSQLResultsRow row,
+        @NotNull DBSDataContainer dataContainer,
+        @NotNull DBCSession session,
+        @NotNull DBDDataFilter dataFilter
+    ) throws DBException {
+        DBDAttributeBinding[] keyAttributes = resultsInfo.getDefaultRowIdentifier().getAttributes().toArray(new DBDAttributeBinding[0]);
+        Object[] rowValues = new Object[keyAttributes.length];
+        List<DBDAttributeConstraint> constraints = new ArrayList<>();
+        for (int i = 0; i < keyAttributes.length; i++) {
+            DBDAttributeBinding keyAttribute = keyAttributes[i];
+            boolean isDocumentValue = keyAttributes.length == 1
+                                      && keyAttribute.getDataKind() == DBPDataKind.DOCUMENT
+                                      && dataContainer instanceof DBSDocumentLocator;
+            if (isDocumentValue) {
+                rowValues[i] =
+                    makeDocumentInputValue(session, (DBSDocumentLocator) dataContainer, resultsInfo, row, null);
+            } else {
+                Object inputCellValue = row.getData()[keyAttribute.getOrdinalPosition()];
+
+                rowValues[i] = keyAttribute.getValueHandler().getValueFromObject(
+                    session,
+                    keyAttribute,
+                    convertInputCellValue(session, keyAttribute,
+                        inputCellValue, false),
+                    false,
+                    true);
+            }
+            final DBDAttributeConstraint constraint = new DBDAttributeConstraint(keyAttribute);
+            constraint.setOperator(DBCLogicalOperator.EQUALS);
+            constraint.setValue(rowValues[i]);
+            constraints.add(constraint);
+        }
+        dataFilter.addConstraints(constraints);
+    }
+
+    /**
+     * Reads cell value as string from provided row and column index.
+     */
     @NotNull
     public String readStringValue(
         @NotNull DBRProgressMonitor monitor,
         @NotNull WebSQLContextInfo contextInfo,
         @NotNull String resultsId,
         @NotNull Integer columnIndex,
-        @Nullable WebSQLResultsRow row
+        @NotNull WebSQLResultsRow row
     ) throws DBException {
         WebSQLResultsInfo resultsInfo = contextInfo.getResults(resultsId);
-        DBDRowIdentifier rowIdentifier = resultsInfo.getDefaultRowIdentifier();
-        checkRowIdentifier(resultsInfo, rowIdentifier);
+        if (!resultsInfo.isSingleRow()) {
+            DBDRowIdentifier rowIdentifier = resultsInfo.getDefaultRowIdentifier();
+            checkRowIdentifier(resultsInfo, rowIdentifier);
+        }
         WebSQLCellValueReceiver dataReceiver = new WebSQLCellValueReceiver(resultsInfo.getDataContainer(), columnIndex);
         readCellDataValue(monitor, resultsInfo, row, dataReceiver);
         return new String(dataReceiver.getBinaryValue(monitor), StandardCharsets.UTF_8);
@@ -944,7 +1005,7 @@ public class WebSQLProcessor implements WebSessionProvider {
 
     @NotNull
     public <T> T getDataContainerByNodePath(DBRProgressMonitor monitor, @NotNull String containerPath, Class<T> type) throws DBException {
-        DBNNode node = webSession.getNavigatorModel().getNodeByPath(monitor, containerPath);
+        DBNNode node = webSession.getNavigatorModelOrThrow().getNodeByPath(monitor, containerPath);
         if (node == null) {
             throw new DBWebException("Container node '" + containerPath + "' not found");
         }
@@ -1138,11 +1199,12 @@ public class WebSQLProcessor implements WebSessionProvider {
         return filter.hasFilters() ? DBCExecutionPurpose.USER_FILTERED : DBCExecutionPurpose.USER;
     }
 
-    private Object setCellRowValue(Object cellRow, WebSession webSession, DBCSession dbcSession, DBDAttributeBinding allAttributes, boolean withoutExecution) {
+    private Object setCellRowValue(Object cellRow, WebSession webSession, DBCSession dbcSession, DBDAttributeBinding allAttributes, boolean withoutExecution)
+        throws DBException {
         if (cellRow instanceof Map<?, ?>) {
             Map<String, Object> variables = (Map<String, Object>) cellRow;
             if (variables.get(FILE_ID) != null) {
-                Path path = CBPlatform.getInstance()
+                Path path = WebAppUtils.getWebPlatform()
                     .getTempFolder(webSession.getProgressMonitor(), TEMP_FILE_FOLDER)
                     .resolve(webSession.getSessionId())
                     .resolve(variables.get(FILE_ID).toString());
@@ -1151,14 +1213,10 @@ public class WebSQLProcessor implements WebSessionProvider {
                     var file = Files.newInputStream(path);
                     return convertInputCellValue(dbcSession, allAttributes, file, withoutExecution);
                 } catch (IOException | DBCException e) {
-                    return new DBException(e.getMessage());
+                    throw new DBException(e.getMessage());
                 }
             }
         }
-        try {
-            return convertInputCellValue(dbcSession, allAttributes, cellRow, withoutExecution);
-        } catch (DBCException e) {
-            return new DBException(e.getMessage());
-        }
+        return convertInputCellValue(dbcSession, allAttributes, cellRow, withoutExecution);
     }
 }

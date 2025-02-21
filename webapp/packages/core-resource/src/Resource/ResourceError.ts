@@ -9,13 +9,12 @@ import { action } from 'mobx';
 
 import { LoadingError } from '@cloudbeaver/core-utils';
 
-import type { CachedResource } from './CachedResource';
+import type { CachedResource } from './CachedResource.js';
 
 export class ResourceError extends LoadingError {
   constructor(
     private readonly resource: CachedResource<any, any, any, any, any>,
     private readonly key: any,
-    private readonly context: any,
     message?: string,
     options?: ErrorOptions,
   ) {

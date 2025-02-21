@@ -34,27 +34,16 @@
       }
     },
     {
-      "label": "Generate dev proprties for CBCE",
+      "label": "Generate Eclipse PDE CloudBeaver",
       "type": "shell",
-      "command": "mvn",
       "osx": {
-        "args": [
-          "package",
-          "-q",
-          "exec:java",
-          "-Dexec.args= -eclipse.version ${eclipse-version} -config ${workspaceFolder}/../idea-workspace-dbeaver/rcp-gen.properties -productFile ${workspaceFolder}/server/product/web-server/CloudbeaverServer.product -projectsFolder ${workspaceFolder}/../ -eclipse ${workspaceFolder}/../dbeaver-workspace/dependencies -output ${workspaceFolder}/../dbeaver-workspace/products/CloudbeaverServer.product"
-        ]
+        "command": "./generate_workspace.sh"
       },
       "windows": {
-        "args": [
-          "package",
-          "-q",
-          "exec:java",
-          "-Dexec.args= -eclipse.version ${eclipse-version} -config ${workspaceFolder}/../idea-workspace-dbeaver/rcp-gen.properties -productFile ${workspaceFolder}/server/product/web-server/CloudbeaverServer.product -projectsFolder ${workspaceFolder}/../ -eclipse ${workspaceFolder}/../dbeaver-workspace/dependencies -output ${workspaceFolder}/../dbeaver-workspace/products/CloudbeaverServer.product"
-        ]
+        "command": "./generate_workspace.cmd"
       },
       "options": {
-        "cwd": "${workspaceFolder}/../idea-rcp-launch-config-generator"
+        "cwd": "${workspaceFolder}/../cloudbeaver"
       },
       "presentation": {
         "reveal": "silent",
@@ -66,10 +55,10 @@
       "label": "Build CE",
       "type": "shell",
       "windows": {
-        "command": "./build-sqlite.bat"
+        "command": "./build.bat"
       },
       "osx": {
-        "command": "./build-sqlite.sh"
+        "command": "./build.sh"
       },
       "options": {
         "cwd": "${workspaceFolder}/deploy"
@@ -95,7 +84,7 @@
     {
       "label": "Yarn Install",
       "type": "shell",
-      "command": "yarn install; yarn lerna bootstrap",
+      "command": "yarn install",
       "args": [],
       "presentation": {
         "reveal": "silent",
@@ -117,6 +106,14 @@
       "command": "yarn clean",
       "options": {
         "cwd": "${workspaceFolder}/webapp"
+      }
+    },
+    {
+      "label": "Add Custom Plugin",
+      "type": "shell",
+      "command": "yarn run add-plugin",
+      "options": {
+        "cwd": "${workspaceFolder}/webapp/packages"
       }
     }
   ],

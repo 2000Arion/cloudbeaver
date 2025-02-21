@@ -9,8 +9,8 @@ import { observer } from 'mobx-react-lite';
 
 import { Filter, s, useFocus, useS, useTranslate } from '@cloudbeaver/core-blocks';
 
-import type { IElementsTree } from '../useElementsTree';
-import styles from './ElementsTreeFilter.m.css';
+import type { IElementsTree } from '../useElementsTree.js';
+import styles from './ElementsTreeFilter.module.css';
 
 interface Props {
   tree: IElementsTree;

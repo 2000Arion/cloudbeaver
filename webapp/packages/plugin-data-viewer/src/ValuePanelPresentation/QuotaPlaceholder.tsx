@@ -8,18 +8,19 @@
 import { observer } from 'mobx-react-lite';
 
 import { Container, Link, s, usePermission, useS, useTranslate } from '@cloudbeaver/core-blocks';
+import { WEBSITE_LINKS } from '@cloudbeaver/core-links';
 import { EAdminPermission } from '@cloudbeaver/core-root';
 
-import type { IResultSetElementKey } from '../DatabaseDataModel/Actions/ResultSet/IResultSetDataKey';
-import { useResultSetActions } from '../DatabaseDataModel/Actions/ResultSet/useResultSetActions';
-import type { IDatabaseDataModel } from '../DatabaseDataModel/IDatabaseDataModel';
-import type { IDatabaseResultSet } from '../DatabaseDataModel/IDatabaseResultSet';
-import styles from './QuotaPlaceholder.m.css';
+import type { IResultSetElementKey } from '../DatabaseDataModel/Actions/ResultSet/IResultSetDataKey.js';
+import { ResultSetDataContentAction } from '../DatabaseDataModel/Actions/ResultSet/ResultSetDataContentAction.js';
+import type { IDatabaseDataModel } from '../DatabaseDataModel/IDatabaseDataModel.js';
+import { ResultSetDataSource } from '../ResultSet/ResultSetDataSource.js';
+import styles from './QuotaPlaceholder.module.css';
 
 interface Props {
   className?: string;
   elementKey: IResultSetElementKey | undefined;
-  model: IDatabaseDataModel<any, IDatabaseResultSet>;
+  model: IDatabaseDataModel<ResultSetDataSource>;
   resultIndex: number;
   keepSize?: boolean;
 }
@@ -35,7 +36,7 @@ export const QuotaPlaceholder: React.FC<React.PropsWithChildren<Props>> = observ
   const translate = useTranslate();
   const admin = usePermission(EAdminPermission.admin);
   const style = useS(styles);
-  const { contentAction } = useResultSetActions({ model, resultIndex });
+  const contentAction = model.source.getAction(resultIndex, ResultSetDataContentAction);
   const limitInfo = elementKey ? contentAction.getLimitInfo(elementKey) : null;
 
   return (
@@ -45,12 +46,7 @@ export const QuotaPlaceholder: React.FC<React.PropsWithChildren<Props>> = observ
         &nbsp;
         <span className={s(style, { limitWord: true })}>
           {admin ? (
-            <Link
-              title={limitInfo?.limitWithSize}
-              href="https://dbeaver.com/docs/cloudbeaver/Server-configuration/#resource-quotas"
-              target="_blank"
-              indicator
-            >
+            <Link title={limitInfo?.limitWithSize} href={WEBSITE_LINKS.SERVER_CONFIGURATION_RESOURCE_QUOTAS_PAGE} target="_blank" indicator>
               {translate('ui_limit')}
             </Link>
           ) : (

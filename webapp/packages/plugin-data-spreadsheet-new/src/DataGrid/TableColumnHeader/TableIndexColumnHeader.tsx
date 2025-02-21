@@ -9,12 +9,12 @@ import { observer } from 'mobx-react-lite';
 import { useContext } from 'react';
 
 import { getComputed, IconOrImage, s, useS, useTranslate } from '@cloudbeaver/core-blocks';
-import type { RenderHeaderCellProps } from '@cloudbeaver/plugin-react-data-grid';
+import type { RenderHeaderCellProps } from '@cloudbeaver/plugin-data-grid';
 
-import { DataGridContext } from '../DataGridContext';
-import { DataGridSelectionContext } from '../DataGridSelection/DataGridSelectionContext';
-import { TableDataContext } from '../TableDataContext';
-import style from './TableIndexColumnHeader.m.css';
+import { DataGridContext } from '../DataGridContext.js';
+import { DataGridSelectionContext } from '../DataGridSelection/DataGridSelectionContext.js';
+import { TableDataContext } from '../TableDataContext.js';
+import style from './TableIndexColumnHeader.module.css';
 
 export const TableIndexColumnHeader = observer<RenderHeaderCellProps<any>>(function TableIndexColumnHeader(props) {
   const dataGridContext = useContext(DataGridContext);
@@ -27,7 +27,12 @@ export const TableIndexColumnHeader = observer<RenderHeaderCellProps<any>>(funct
     throw new Error('Contexts required');
   }
 
-  const readonly = getComputed(() => tableDataContext.isReadOnly() || dataGridContext.model.isReadonly(dataGridContext.resultIndex));
+  const readonly = getComputed(
+    () =>
+      tableDataContext.isReadOnly() ||
+      dataGridContext.model.isReadonly(dataGridContext.resultIndex) ||
+      !dataGridContext.model.hasElementIdentifier(dataGridContext.resultIndex),
+  );
 
   function handleClick(event: React.MouseEvent<HTMLDivElement>) {
     selectionContext.selectTable();

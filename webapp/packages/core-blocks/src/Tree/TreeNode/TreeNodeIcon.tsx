@@ -7,10 +7,10 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { s } from '../../s';
-import { StaticImage } from '../../StaticImage';
-import { useS } from '../../useS';
-import style from './TreeNodeIcon.m.css';
+import { s } from '../../s.js';
+import { StaticImage } from '../../StaticImage.js';
+import { useS } from '../../useS.js';
+import style from './TreeNodeIcon.module.css';
 
 interface Props {
   icon?: string;

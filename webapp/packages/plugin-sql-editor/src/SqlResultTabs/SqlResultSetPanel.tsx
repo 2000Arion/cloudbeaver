@@ -10,9 +10,9 @@ import { observer } from 'mobx-react-lite';
 import { useService } from '@cloudbeaver/core-di';
 import { TableViewerLoader } from '@cloudbeaver/plugin-data-viewer';
 
-import type { IResultTab, ISqlEditorTabState } from '../ISqlEditorTabState';
-import { SqlQueryResultService } from './SqlQueryResultService';
-import style from './SqlResultSetPanel.m.css';
+import type { IResultTab, ISqlEditorTabState } from '../ISqlEditorTabState.js';
+import { SqlQueryResultService } from './SqlQueryResultService.js';
+import style from './SqlResultSetPanel.module.css';
 
 interface Props {
   state: ISqlEditorTabState;
@@ -41,7 +41,7 @@ export const SqlResultSetPanel = observer<Props>(function SqlResultSetPanel({ st
 
   return (
     <TableViewerLoader
-      className={style.tableViewerLoader}
+      className={style['tableViewerLoader']}
       tableId={group.modelId}
       resultIndex={resultTab.indexInResultSet}
       presentationId={resultTab.presentationId}

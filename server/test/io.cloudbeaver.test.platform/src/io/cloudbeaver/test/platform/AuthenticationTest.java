@@ -1,64 +1,101 @@
+/*
+ * DBeaver - Universal Database Manager
+ * Copyright (C) 2010-2024 DBeaver Corp and others
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.cloudbeaver.test.platform;
 
+import io.cloudbeaver.CloudbeaverMockTest;
+import io.cloudbeaver.app.CEAppStarter;
+import io.cloudbeaver.auth.provider.local.LocalAuthProvider;
 import io.cloudbeaver.auth.provider.rp.RPAuthProvider;
-import io.cloudbeaver.utils.WebTestUtils;
+import io.cloudbeaver.test.WebGQLClient;
+import org.jkiss.code.NotNull;
 import org.jkiss.dbeaver.model.auth.SMAuthStatus;
 import org.jkiss.dbeaver.model.data.json.JSONUtils;
+import org.jkiss.utils.SecurityUtils;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-public class AuthenticationTest {
-    public static final String GQL_TEMPLATE_OPEN_SESSION = "openSession.json";
-    public static final String GQL_TEMPLATE_ACTIVE_USER = "activeUser.json";
-    public static final String REVERSE_PROXY_TEST_USER = "reverseProxyTestUser";
+public class AuthenticationTest extends CloudbeaverMockTest {
+    private static final String GQL_OPEN_SESSION = """
+        mutation openSession($defaultLocale: String) {
+          result: openSession(defaultLocale: $defaultLocale) {
+            valid
+          }
+        }""";
+    private static final String GQL_ACTIVE_USER = """
+        query activeUser {
+          result: activeUser {
+            userId
+          }
+        }""";
+    private static final String GQL_AUTH_LOGOUT = """
+        query authLogoutExtended($provider: ID, $configuration: ID) {
+          result: authLogoutExtended(provider: $provider, configuration: $configuration) {
+            redirectLinks
+          }
+        }""";
 
     @Test
     public void testLoginUser() throws Exception {
-        HttpClient client = CEServerTestSuite.createClient();
-        Map<String, Object> authInfo = WebTestUtils.authenticateUser(
-            client, CEServerTestSuite.getScriptsPath(), CEServerTestSuite.GQL_API_URL);
+        WebGQLClient client = CEAppStarter.createClient();
+        Map<String, Object> authInfo = CEAppStarter.authenticateTestUser(client);
         Assert.assertEquals(SMAuthStatus.SUCCESS.name(), JSONUtils.getString(authInfo, "authStatus"));
     }
 
+
+    @Test
+    public void testLoginUserWithCamelCase() throws Exception {
+        WebGQLClient client = CEAppStarter.createClient();
+        for (String userId : Set.of("Test", "tESt", "tesT", "TEST")) {
+            Map<String, Object> credsWithCamelCase = getUserCredentials(userId);
+            // authenticating with user
+            Map<String, Object> authInfo = CEAppStarter.authenticateTestUser(client, credsWithCamelCase);
+            Assert.assertEquals(SMAuthStatus.SUCCESS.name(), JSONUtils.getString(authInfo, "authStatus"));
+            Map<String, Object> activeUser = client.sendQuery(GQL_ACTIVE_USER, null);
+            Assert.assertEquals(userId.toLowerCase(), JSONUtils.getString(activeUser, "userId"));
+            // making logout
+            client.sendQuery(GQL_AUTH_LOGOUT, Map.of("provider", "local"));
+
+            activeUser = client.sendQuery(GQL_ACTIVE_USER, null);
+            Assert.assertNotEquals(userId.toLowerCase(), JSONUtils.getString(activeUser, "userId"));
+        }
+    }
+
+    @NotNull
+    private Map<String, Object> getUserCredentials(@NotNull String userId) throws Exception {
+        return Map.of(
+            LocalAuthProvider.CRED_USER, userId,
+            LocalAuthProvider.CRED_PASSWORD, SecurityUtils.makeDigest("test")
+        );
+    }
+
+
     @Test
     public void testReverseProxyAnonymousModeLogin() throws Exception {
-        HttpClient client = CEServerTestSuite.createClient();
-        Map<String, Object> sessionInfo = openSession(client);
+        WebGQLClient client = CEAppStarter.createClient();
+        String testUserId = "reverseProxyTestUser";
+        List<String> headers = List.of(RPAuthProvider.X_USER, testUserId, RPAuthProvider.X_TEAM, "user");
+        Map<String, Object> sessionInfo = client.sendQueryWithHeaders(GQL_OPEN_SESSION, null, headers);
         Assert.assertTrue(JSONUtils.getBoolean(sessionInfo, "valid"));
-        Map<String, Object> activeUser = getActiveUser(client);
-        Assert.assertEquals(REVERSE_PROXY_TEST_USER, JSONUtils.getString(activeUser, "userId"));
+
+        Map<String, Object> activeUser = client.sendQuery(GQL_ACTIVE_USER, null);
+        Assert.assertEquals(testUserId, JSONUtils.getString(activeUser, "userId"));
     }
-
-    private Map<String, Object> openSession(HttpClient client) throws Exception {
-        Map<String, Object> data = doPostQuery(client, GQL_TEMPLATE_OPEN_SESSION);
-        if (data != null) {
-            return JSONUtils.getObject(data, "session");
-        }
-        return Collections.emptyMap();
-    }
-
-    private Map<String, Object> getActiveUser(HttpClient client) throws Exception {
-        Map<String, Object> data = doPostQuery(client, GQL_TEMPLATE_ACTIVE_USER);
-        if (data != null) {
-            return JSONUtils.getObject(data, "user");
-        }
-        return Collections.emptyMap();
-    }
-
-    private Map<String, Object> doPostQuery(HttpClient client, String gqlScript) throws Exception {
-        String input = WebTestUtils.readScriptTemplate(gqlScript, CEServerTestSuite.getScriptsPath());
-        List<String> headers = List.of(RPAuthProvider.X_USER, REVERSE_PROXY_TEST_USER, RPAuthProvider.X_TEAM, "user");
-        Map<String, Object> map = WebTestUtils.doPostWithHeaders(CEServerTestSuite.GQL_API_URL, input, client, headers);
-        return JSONUtils.getObjectOrNull(map, "data");
-    }
-
-
 }

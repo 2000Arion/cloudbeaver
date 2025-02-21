@@ -8,20 +8,21 @@
 import { observer } from 'mobx-react-lite';
 import React, { useCallback } from 'react';
 
-import { Checkbox, MenuItem, MenuItemCheckbox, MenuItemElement, MenuSeparator, useTranslate } from '@cloudbeaver/core-blocks';
+import { Checkbox, MenuItem, MenuItemCheckbox, MenuItemElement, MenuItemRadio, MenuSeparator, Radio, useTranslate } from '@cloudbeaver/core-blocks';
 import {
-  IMenuData,
-  IMenuItem,
+  type IMenuData,
+  type IMenuItem,
+  isMenuCustomItem,
   MenuActionItem,
   MenuBaseItem,
   MenuCheckboxItem,
-  MenuCustomItem,
+  MenuRadioItem,
   MenuSeparatorItem,
   MenuSubMenuItem,
 } from '@cloudbeaver/core-view';
 
-import { MenuActionElement } from './MenuActionElement';
-import { SubMenuElement } from './SubMenuElement';
+import { MenuActionElement } from './MenuActionElement.js';
+import { SubMenuElement } from './SubMenuElement.js';
 
 export interface IMenuItemRendererProps extends React.ButtonHTMLAttributes<any> {
   item: IMenuItem;
@@ -44,10 +45,10 @@ export const MenuItemRenderer = observer<IMenuItemRendererProps>(function MenuIt
     [item, onItemClose],
   );
 
-  if (item instanceof MenuCustomItem) {
+  if (isMenuCustomItem(item)) {
     const CustomMenuItem = item.getComponent();
 
-    return <CustomMenuItem item={item} menuData={menuData} onClick={onClick} />;
+    return <CustomMenuItem item={item} context={menuData.context} onClick={onClick} />;
   }
 
   if (item instanceof MenuSubMenuItem) {
@@ -94,6 +95,23 @@ export const MenuItemRenderer = observer<IMenuItemRendererProps>(function MenuIt
           tooltip={item.tooltip}
         />
       </MenuItemCheckbox>
+    );
+  }
+
+  if (item instanceof MenuRadioItem) {
+    return (
+      <MenuItemRadio
+        hidden={item.hidden}
+        id={item.id}
+        aria-label={translate(item.label)}
+        disabled={item.disabled}
+        name={item.id}
+        value={item.label}
+        checked={item.checked}
+        onClick={() => onClick()}
+      >
+        <MenuItemElement label={item.label} icon={<Radio checked={item.checked} mod={['primary', 'menu']} ripple={false} />} tooltip={item.tooltip} />
+      </MenuItemRadio>
     );
   }
 

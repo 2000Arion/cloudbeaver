@@ -18,11 +18,13 @@ package io.cloudbeaver.service.security.db;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.Strictness;
 import io.cloudbeaver.auth.provider.local.LocalAuthProviderConstants;
-import io.cloudbeaver.model.app.WebApplication;
+import io.cloudbeaver.model.app.ServletApplication;
+import io.cloudbeaver.model.config.WebDatabaseConfig;
 import io.cloudbeaver.registry.WebAuthProviderDescriptor;
 import io.cloudbeaver.registry.WebAuthProviderRegistry;
-import io.cloudbeaver.utils.WebAppUtils;
+import io.cloudbeaver.utils.ServletAppUtils;
 import org.apache.commons.dbcp2.*;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -31,6 +33,7 @@ import org.jkiss.code.Nullable;
 import org.jkiss.dbeaver.DBException;
 import org.jkiss.dbeaver.Log;
 import org.jkiss.dbeaver.model.DBConstants;
+import org.jkiss.dbeaver.model.DBPConnectionInformation;
 import org.jkiss.dbeaver.model.auth.AuthInfo;
 import org.jkiss.dbeaver.model.connection.DBPDriver;
 import org.jkiss.dbeaver.model.impl.app.ApplicationRegistry;
@@ -74,23 +77,25 @@ public class CBDatabase {
     public static final String SCHEMA_UPDATE_SQL_PATH = "db/cb_schema_update_";
 
     private static final int LEGACY_SCHEMA_VERSION = 1;
-    private static final int CURRENT_SCHEMA_VERSION = 21;
+    private static final int CURRENT_SCHEMA_VERSION = 22;
 
     private static final String DEFAULT_DB_USER_NAME = "cb-data";
     private static final String DEFAULT_DB_PWD_FILE = ".database-credentials.dat";
     private static final String V1_DB_NAME = "cb.h2.dat";
     private static final String V2_DB_NAME = "cb.h2v2.dat";
 
-    private final WebApplication application;
+    private final ServletApplication application;
     private final WebDatabaseConfig databaseConfiguration;
     private PoolingDataSource<PoolableConnection> cbDataSource;
+    private DBPConnectionInformation cbConnectionInformation;
+
     private transient volatile Connection exclusiveConnection;
 
     private String instanceId;
     private SMAdminController adminSecurityController;
     private SQLDialect dialect;
 
-    public CBDatabase(WebApplication application, WebDatabaseConfig databaseConfiguration) {
+    public CBDatabase(ServletApplication application, WebDatabaseConfig databaseConfiguration) {
         this.application = application;
         this.databaseConfiguration = databaseConfiguration;
     }
@@ -127,8 +132,17 @@ public class CBDatabase {
 
         LoggingProgressMonitor monitor = new LoggingProgressMonitor(log);
 
+        if (isDefaultH2Configuration(databaseConfiguration)) {
+            //force use default values even if they are explicitly specified
+            databaseConfiguration.setUser(null);
+            databaseConfiguration.setPassword(null);
+            databaseConfiguration.setSchema(null);
+        }
+
         String dbUser = databaseConfiguration.getUser();
         String dbPassword = databaseConfiguration.getPassword();
+        String schemaName = databaseConfiguration.getSchema();
+
         if (CommonUtils.isEmpty(dbUser) && driver.isEmbedded()) {
             File pwdFile = application.getDataDirectory(true).resolve(DEFAULT_DB_PWD_FILE).toFile();
             if (!driver.isAnonymousAccess()) {
@@ -189,9 +203,17 @@ public class CBDatabase {
 
         try (Connection connection = cbDataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
-            log.debug("\tConnected to " + metaData.getDatabaseProductName() + " " + metaData.getDatabaseProductVersion());
+            final String dbName = metaData.getDatabaseProductName();
+            final String dbVersion = metaData.getDatabaseProductVersion();
+            log.debug("\tConnected to " + dbName + " " + dbVersion);
 
-            var schemaName = databaseConfiguration.getSchema();
+            cbConnectionInformation = new DBPConnectionInformation(
+                databaseConfiguration.getUrl(),
+                databaseConfiguration.getDriver(),
+                dbName,
+                dbVersion
+            );
+
             if (dialect instanceof SQLDialectSchemaController && CommonUtils.isNotEmpty(schemaName)) {
                 var dialectSchemaController = (SQLDialectSchemaController) dialect;
                 var schemaExistQuery = dialectSchemaController.getSchemaExistQuery(schemaName);
@@ -289,10 +311,12 @@ public class CBDatabase {
             return null;
         }
 
-        initialDataPath = WebAppUtils.getRelativePath(
+        initialDataPath = ServletAppUtils.getRelativePath(
             databaseConfiguration.getInitialDataConfiguration(), application.getHomeDirectory());
         try (Reader reader = new InputStreamReader(new FileInputStream(initialDataPath), StandardCharsets.UTF_8)) {
-            Gson gson = new GsonBuilder().setLenient().create();
+            Gson gson = new GsonBuilder()
+                .setStrictness(Strictness.LENIENT)
+                .create();
             return gson.fromJson(reader, CBDatabaseInitialData.class);
         } catch (Exception e) {
             throw new DBException("Error loading initial data configuration", e);
@@ -467,7 +491,7 @@ public class CBDatabase {
     // Persistence
 
 
-    private void validateInstancePersistentState(Connection connection) throws IOException, SQLException, DBException {
+    protected void validateInstancePersistentState(Connection connection) throws IOException, SQLException, DBException {
         try (JDBCTransaction txn = new JDBCTransaction(connection)) {
             checkInstanceRecord(connection);
             var defaultTeamId = application.getAppConfiguration().getDefaultUserTeam();
@@ -578,4 +602,33 @@ public class CBDatabase {
         return dialect;
     }
 
+    public static boolean isDefaultH2Configuration(WebDatabaseConfig databaseConfiguration) {
+        var workspace = ServletAppUtils.getServletApplication().getWorkspaceDirectory();
+        var v1Path = workspace.resolve(".data").resolve(V1_DB_NAME);
+        var v2Path = workspace.resolve(".data").resolve(V2_DB_NAME);
+        var v1DefaultUrl = "jdbc:h2:" + v1Path;
+        var v2DefaultUrl = "jdbc:h2:" + v2Path;
+        return v1DefaultUrl.equals(databaseConfiguration.getUrl())
+            || v2DefaultUrl.equals(databaseConfiguration.getUrl());
+    }
+
+    /**
+     * Returns internal database metadata.
+     */
+    @NotNull
+    public DBPConnectionInformation getMetaDataInfo() {
+        return cbConnectionInformation;
+    }
+
+    protected WebDatabaseConfig getDatabaseConfiguration() {
+        return databaseConfiguration;
+    }
+
+    protected ServletApplication getApplication() {
+        return application;
+    }
+
+    protected SMAdminController getAdminSecurityController() {
+        return adminSecurityController;
+    }
 }

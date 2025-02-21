@@ -10,10 +10,10 @@ import { useCallback, useEffect } from 'react';
 
 import { Pane, ResizerControls, s, Split, TextPlaceholder, useS, useSplitUserState, useTranslate } from '@cloudbeaver/core-blocks';
 
-import style from './LogViewer.m.css';
-import { LogViewerInfoPanel } from './LogViewerInfoPanel';
-import { LogViewerTable } from './LogViewerTable';
-import { useLogViewer } from './useLogViewer';
+import style from './LogViewer.module.css';
+import { LogViewerInfoPanel } from './LogViewerInfoPanel.js';
+import { LogViewerTable } from './LogViewerTable.js';
+import { useLogViewer } from './useLogViewer.js';
 
 export const LogViewer = observer(function LogViewer() {
   const styles = useS(style);
@@ -35,12 +35,7 @@ export const LogViewer = observer(function LogViewer() {
 
   return (
     <div className={s(styles, { logViewWrapper: true })}>
-      <Split
-        {...splitState}
-        mode={logViewerState.selectedItem ? splitState.mode : 'minimize'}
-        disable={!logViewerState.selectedItem}
-        keepRatio
-      >
+      <Split {...splitState} mode={logViewerState.selectedItem ? splitState.mode : 'minimize'} disable={!logViewerState.selectedItem} keepRatio>
         <Pane className={s(styles, { pane: true })}>
           <LogViewerTable
             items={logViewerState.logItems}

@@ -8,25 +8,25 @@
 import { action, makeObservable } from 'mobx';
 
 import { Dependency, injectable } from '@cloudbeaver/core-di';
-import { ExecutorInterrupter, IAsyncContextLoader, IExecutionContextProvider } from '@cloudbeaver/core-executor';
+import { ExecutorInterrupter, type IAsyncContextLoader, type IExecutionContextProvider } from '@cloudbeaver/core-executor';
 import {
-  INodeNavigationData,
+  type INodeNavigationData,
   NavNodeInfoResource,
   NavNodeManagerService,
   NavTreeResource,
   NodeManagerUtils,
 } from '@cloudbeaver/core-navigation-tree';
 import { getProjectNodeId } from '@cloudbeaver/core-projects';
-import { isResourceAlias, type ResourceKey, resourceKeyList, ResourceKeySimple, ResourceKeyUtils } from '@cloudbeaver/core-resource';
+import { isResourceAlias, type ResourceKey, resourceKeyList, type ResourceKeySimple, ResourceKeyUtils } from '@cloudbeaver/core-resource';
 import { ServerEventId } from '@cloudbeaver/core-root';
 
-import type { IConnectionInfoParams } from '../CONNECTION_INFO_PARAM_SCHEMA';
-import { ConnectionFolderEventHandler, IConnectionFolderEvent } from '../ConnectionFolderEventHandler';
-import { Connection, ConnectionInfoActiveProjectKey, ConnectionInfoResource, createConnectionParam } from '../ConnectionInfoResource';
-import { ConnectionsManagerService } from '../ConnectionsManagerService';
-import { ContainerResource } from '../ContainerResource';
-import { getConnectionParentId } from './getConnectionParentId';
-import { getFolderNodeParents } from './getFolderNodeParents';
+import type { IConnectionInfoParams } from '../CONNECTION_INFO_PARAM_SCHEMA.js';
+import { ConnectionFolderEventHandler, type IConnectionFolderEvent } from '../ConnectionFolderEventHandler.js';
+import { type Connection, ConnectionInfoActiveProjectKey, ConnectionInfoResource, createConnectionParam } from '../ConnectionInfoResource.js';
+import { ConnectionsManagerService } from '../ConnectionsManagerService.js';
+import { ContainerResource } from '../ContainerResource.js';
+import { getConnectionParentId } from './getConnectionParentId.js';
+import { getFolderNodeParents } from './getFolderNodeParents.js';
 
 @injectable()
 export class ConnectionNavNodeService extends Dependency {
@@ -65,7 +65,7 @@ export class ConnectionNavNodeService extends Dependency {
         const parents = data.nodePaths.map(nodeId => {
           const parents = getFolderNodeParents(nodeId);
 
-          return parents[parents.length - 1];
+          return parents[parents.length - 1]!;
         });
         this.navTreeResource.markOutdated(resourceKeyList(parents));
       },
@@ -78,7 +78,7 @@ export class ConnectionNavNodeService extends Dependency {
         const parents = data.nodePaths.map(nodeId => {
           const parents = getFolderNodeParents(nodeId);
 
-          return parents[parents.length - 1];
+          return parents[parents.length - 1]!;
         });
 
         this.navTreeResource.deleteInNode(
@@ -199,8 +199,17 @@ export class ConnectionNavNodeService extends Dependency {
     const parentId = getConnectionParentId(connection.projectId, connection.folder);
 
     await this.navTreeResource.waitLoad();
+
     if (!this.navTreeResource.has(parentId)) {
-      return;
+      await this.navNodeInfoResource.loadNodeParents(parentId);
+      const parents = this.navNodeInfoResource.getParents(parentId);
+
+      this.navTreeResource.markOutdated(parents[parents.length - 1]);
+      const preloaded = await this.navTreeResource.preloadNodeParents(parents, parentId);
+
+      if (!preloaded) {
+        return;
+      }
     }
 
     let children = this.navTreeResource.get(parentId);

@@ -19,6 +19,7 @@ import {
   OverlayHeaderTitle,
   OverlayMessage,
   s,
+  useFocus,
   useResource,
   useS,
   useTranslate,
@@ -34,10 +35,10 @@ import { useService } from '@cloudbeaver/core-di';
 import { NotificationService } from '@cloudbeaver/core-events';
 import { NodeManagerUtils } from '@cloudbeaver/core-navigation-tree';
 
-import type { ISqlEditorTabState } from './ISqlEditorTabState';
-import { SqlDataSourceService } from './SqlDataSource/SqlDataSourceService';
-import style from './SqlEditorOverlay.m.css';
-import { SqlEditorService } from './SqlEditorService';
+import type { ISqlEditorTabState } from './ISqlEditorTabState.js';
+import { SqlDataSourceService } from './SqlDataSource/SqlDataSourceService.js';
+import style from './SqlEditorOverlay.module.css';
+import { SqlEditorService } from './SqlEditorService.js';
 
 interface Props {
   state: ISqlEditorTabState;
@@ -59,6 +60,7 @@ export const SqlEditorOverlay = observer<Props>(function SqlEditorOverlay({ stat
     executionContext ? createConnectionParam(executionContext.projectId, executionContext.connectionId) : null,
   );
   const driver = useResource(SqlEditorOverlay, DBDriverResource, connection.tryGetData?.driverId ?? null);
+  const [focusedRef, { updateFocus }] = useFocus<HTMLDivElement>({ focusFirstChild: true });
 
   const connected = getComputed(() => connection.tryGetData?.connected ?? false);
 
@@ -90,25 +92,29 @@ export const SqlEditorOverlay = observer<Props>(function SqlEditorOverlay({ stat
   useEffect(() => {
     if (initExecutionContext && connected) {
       init();
+    } else if (initExecutionContext && !connected) {
+      updateFocus();
     }
   }, [connected, initExecutionContext]);
 
   return (
-    <Overlay active={initExecutionContext && !connection.tryGetData?.connected}>
-      <OverlayHeader>
-        <OverlayHeaderIcon icon={driver.tryGetData?.icon} />
-        <OverlayHeaderTitle>{connection.tryGetData?.name}</OverlayHeaderTitle>
-        {dataContainer && <OverlayHeaderSubTitle>{dataContainer}</OverlayHeaderSubTitle>}
-      </OverlayHeader>
-      <OverlayMessage>{translate('sql_editor_restore_message')}</OverlayMessage>
-      <OverlayActions className={s(styles, { overlayActions: true })}>
-        <Button type="button" mod={['outlined']} loader onClick={cancelConnection}>
-          {translate('ui_processing_cancel')}
-        </Button>
-        <Button type="button" mod={['unelevated']} loading={initializingContext} loader onClick={init}>
-          {translate('sql_editor_restore')}
-        </Button>
-      </OverlayActions>
-    </Overlay>
+    <div ref={focusedRef}>
+      <Overlay active={initExecutionContext && !connected}>
+        <OverlayHeader>
+          <OverlayHeaderIcon icon={driver.tryGetData?.icon} />
+          <OverlayHeaderTitle>{connection.tryGetData?.name}</OverlayHeaderTitle>
+          {dataContainer && <OverlayHeaderSubTitle>{dataContainer}</OverlayHeaderSubTitle>}
+        </OverlayHeader>
+        <OverlayMessage>{translate('sql_editor_restore_message')}</OverlayMessage>
+        <OverlayActions className={s(styles, { overlayActions: true })}>
+          <Button type="button" mod={['outlined']} loader onClick={cancelConnection}>
+            {translate('ui_processing_cancel')}
+          </Button>
+          <Button type="button" mod={['unelevated']} loading={initializingContext} loader onClick={init}>
+            {translate('sql_editor_restore')}
+          </Button>
+        </OverlayActions>
+      </Overlay>
+    </div>
   );
 });

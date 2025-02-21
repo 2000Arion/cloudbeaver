@@ -5,17 +5,17 @@
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
  */
-import { Connectable, connectable, filter, map, merge, Observable, Subject } from 'rxjs';
+import { type Connectable, connectable, filter, map, merge, Observable, Subject } from 'rxjs';
 
-import { ISyncExecutor, SyncExecutor } from '@cloudbeaver/core-executor';
+import { type ISyncExecutor, SyncExecutor } from '@cloudbeaver/core-executor';
 import type { IResource } from '@cloudbeaver/core-resource';
 import { compose } from '@cloudbeaver/core-utils';
 
-import type { IBaseServerEvent, IServerEventCallback, IServerEventEmitter, Subscription } from './IServerEventEmitter';
+import type { IBaseServerEvent, IServerEventCallback, IServerEventEmitter, Unsubscribe } from './IServerEventEmitter.js';
 
 interface ISubscribedResourceInfo {
   listeners: number;
-  subscription: Subscription;
+  disposeSubscription: Unsubscribe;
 }
 
 export abstract class TopicEventHandler<
@@ -28,17 +28,20 @@ export abstract class TopicEventHandler<
   readonly onInit: ISyncExecutor;
   readonly eventsSubject: Connectable<TEvent>;
 
-  private subscription: Subscription | null;
+  private disposeSubscription: Unsubscribe | null;
   private readonly activeResources: Array<IResource<any, any, any, any, any>>;
   private readonly subscribedResources: Map<IResource<any, any, any, any, any>, ISubscribedResourceInfo>;
   private readonly serverSubject?: Observable<TEvent>;
   private readonly subject: Subject<TEvent>;
-  constructor(private readonly topic: string, private readonly emitter: IServerEventEmitter<SourceEvent>) {
+  constructor(
+    topic: string,
+    private readonly emitter: IServerEventEmitter<SourceEvent>,
+  ) {
     this.onInit = new SyncExecutor();
     this.subject = new Subject();
     this.activeResources = [];
     this.subscribedResources = new Map();
-    this.subscription = null;
+    this.disposeSubscription = null;
     this.serverSubject = this.emitter.multiplex(topic, this.map);
     this.eventsSubject = connectable(merge(this.subject, this.serverSubject), {
       connector: () => new Subject(),
@@ -57,7 +60,7 @@ export abstract class TopicEventHandler<
     callback: IServerEventCallback<T>,
     mapTo: (event: TEvent) => T = event => event as unknown as T,
     resource?: IResource<any, any, any, any, any>,
-  ): Subscription {
+  ): Unsubscribe {
     if (resource) {
       this.registerResource(resource);
     }
@@ -83,7 +86,7 @@ export abstract class TopicEventHandler<
     mapTo: (param: TEvent) => T = event => event as unknown as T,
     filterFn: (param: TEvent) => boolean = () => true,
     resource?: IResource<any, any, any, any, any>,
-  ): Subscription {
+  ): Unsubscribe {
     if (resource) {
       this.registerResource(resource);
     }
@@ -115,10 +118,10 @@ export abstract class TopicEventHandler<
       if (resource.useTracker.isResourceInUse) {
         this.activeResources.push(resource);
 
-        if (!this.subscription) {
+        if (!this.disposeSubscription) {
           // console.log('Subscribe: ', resource.getName());
           const sub = this.eventsSubject.connect();
-          this.subscription = () => sub.unsubscribe();
+          this.disposeSubscription = () => sub.unsubscribe();
         }
       }
     }
@@ -129,8 +132,8 @@ export abstract class TopicEventHandler<
 
     if (this.activeResources.length === 0) {
       // console.log('Unsubscribe: ', resource.getName());
-      this.subscription?.();
-      this.subscription = null;
+      this.disposeSubscription?.();
+      this.disposeSubscription = null;
     }
   }
 
@@ -140,10 +143,10 @@ export abstract class TopicEventHandler<
     if (!info) {
       info = {
         listeners: 0,
-        subscription: this.resourceUseHandler.bind(this, resource),
+        disposeSubscription: this.resourceUseHandler.bind(this, resource),
       };
       this.subscribedResources.set(resource, info);
-      resource.useTracker.onUse.addHandler(info.subscription);
+      resource.useTracker.onUse.addHandler(info.disposeSubscription);
       // console.log('Register: ', resource.getName());
     }
 
@@ -158,7 +161,7 @@ export abstract class TopicEventHandler<
 
       if (info.listeners === 0) {
         this.removeActiveResource(resource);
-        resource.useTracker.onUse.removeHandler(info.subscription);
+        resource.useTracker.onUse.removeHandler(info.disposeSubscription);
         this.subscribedResources.delete(resource);
         // console.log('Unregister: ', resource.getName());
       }

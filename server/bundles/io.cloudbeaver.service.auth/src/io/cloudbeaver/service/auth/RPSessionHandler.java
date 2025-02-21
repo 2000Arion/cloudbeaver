@@ -19,14 +19,14 @@ package io.cloudbeaver.service.auth;
 import io.cloudbeaver.DBWebException;
 import io.cloudbeaver.auth.SMAuthProviderExternal;
 import io.cloudbeaver.auth.provider.rp.RPAuthProvider;
-import io.cloudbeaver.model.app.WebAuthConfiguration;
+import io.cloudbeaver.model.app.ServletAuthConfiguration;
 import io.cloudbeaver.model.session.WebSession;
 import io.cloudbeaver.model.session.WebSessionAuthProcessor;
 import io.cloudbeaver.registry.WebAuthProviderDescriptor;
 import io.cloudbeaver.registry.WebAuthProviderRegistry;
 import io.cloudbeaver.server.CBApplication;
 import io.cloudbeaver.service.DBWSessionHandler;
-import io.cloudbeaver.utils.WebAppUtils;
+import io.cloudbeaver.utils.ServletAppUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jkiss.code.NotNull;
@@ -43,10 +43,9 @@ import org.jkiss.utils.CommonUtils;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.*;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RPSessionHandler implements DBWSessionHandler {
 
@@ -57,7 +56,8 @@ public class RPSessionHandler implements DBWSessionHandler {
     public boolean handleSessionOpen(WebSession webSession, HttpServletRequest request, HttpServletResponse response) throws DBException, IOException {
         boolean configMode = CBApplication.getInstance().isConfigurationMode();
         //checks if the app is not in configuration mode and reverse proxy auth is enabled in the config file
-        WebAuthConfiguration appConfiguration = (WebAuthConfiguration) WebAppUtils.getWebApplication().getAppConfiguration();
+        ServletAuthConfiguration appConfiguration = (ServletAuthConfiguration) ServletAppUtils.getServletApplication()
+            .getAppConfiguration();
         boolean isReverseProxyAuthEnabled = appConfiguration.isAuthProviderEnabled(RPAuthProvider.AUTH_PROVIDER);
         if (!configMode && isReverseProxyAuthEnabled) {
             reverseProxyAuthentication(request, webSession);
@@ -72,7 +72,7 @@ public class RPSessionHandler implements DBWSessionHandler {
             throw new DBWebException("Auth provider " + RPAuthProvider.AUTH_PROVIDER + " not found");
         }
         SMAuthProviderExternal<?> authProviderExternal = (SMAuthProviderExternal<?>) authProvider.getInstance();
-        SMAuthProviderCustomConfiguration configuration = WebAppUtils.getWebAuthApplication()
+        SMAuthProviderCustomConfiguration configuration = ServletAppUtils.getAuthApplication()
             .getAuthConfiguration()
             .getAuthCustomConfigurations()
             .stream()
@@ -97,9 +97,14 @@ public class RPSessionHandler implements DBWSessionHandler {
         String role = request.getHeader(resolveParam(paramConfigMap.get(RPConstants.PARAM_ROLE_NAME), RPAuthProvider.X_ROLE_TE));
         String firstName = request.getHeader(resolveParam(paramConfigMap.get(RPConstants.PARAM_FIRST_NAME), RPAuthProvider.X_FIRST_NAME));
         String lastName = request.getHeader(resolveParam(paramConfigMap.get(RPConstants.PARAM_LAST_NAME), RPAuthProvider.X_LAST_NAME));
-        String logoutUrl = Objects.requireNonNull(configuration).getParameter(RPConstants.PARAM_LOGOUT_URL);
-        String teamDelimiter = JSONUtils.getString(configuration.getParameters(),
-                RPConstants.PARAM_TEAM_DELIMITER, "\\|");
+        String fullName = request.getHeader(resolveParam(paramConfigMap.get(RPConstants.PARAM_FULL_NAME), RPAuthProvider.X_FULL_NAME));
+        String logoutUrl =  null;
+        String teamDelimiter = DEFAULT_TEAM_DELIMITER;
+        if (configuration != null) {
+            logoutUrl = configuration.getParameter(RPConstants.PARAM_LOGOUT_URL);
+            teamDelimiter = resolveParam(JSONUtils.getString(configuration.getParameters(),
+                RPConstants.PARAM_TEAM_DELIMITER), DEFAULT_TEAM_DELIMITER);
+        }
         List<String> userTeams = teams == null ? null : (teams.isEmpty() ? List.of() : List.of(teams.split(teamDelimiter)));
         if (userName != null) {
             try {
@@ -110,6 +115,9 @@ public class RPSessionHandler implements DBWSessionHandler {
                 }
                 if (!CommonUtils.isEmpty(lastName)) {
                     credentials.put(SMStandardMeta.META_LAST_NAME, lastName);
+                }
+                if (!CommonUtils.isEmpty(fullName)) {
+                    credentials.put("fullName", fullName);
                 }
                 if (CommonUtils.isNotEmpty(logoutUrl)) {
                     credentials.put("logoutUrl", logoutUrl);

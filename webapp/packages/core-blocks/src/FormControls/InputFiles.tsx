@@ -8,30 +8,31 @@
 import { observer } from 'mobx-react-lite';
 import { forwardRef, useContext, useEffect, useState } from 'react';
 
-import { Button } from '../Button';
-import { filterLayoutFakeProps, getLayoutProps } from '../Containers/filterLayoutFakeProps';
-import type { ILayoutSizeProps } from '../Containers/ILayoutSizeProps';
-import { useTranslate } from '../localization/useTranslate';
-import { s } from '../s';
-import { Tag } from '../Tags/Tag';
-import { Tags } from '../Tags/Tags';
-import { UploadArea } from '../UploadArea';
-import { useCombinedHandler } from '../useCombinedHandler';
-import { useRefInherit } from '../useRefInherit';
-import { useS } from '../useS';
-import { useStateDelay } from '../useStateDelay';
-import { Field } from './Field';
-import { FieldDescription } from './FieldDescription';
-import { FieldLabel } from './FieldLabel';
-import { FormContext } from './FormContext';
-import InputFilesStyles from './InputFiles.m.css';
-import { isControlPresented } from './isControlPresented';
+import { Button } from '../Button.js';
+import { filterLayoutFakeProps, getLayoutProps } from '../Containers/filterLayoutFakeProps.js';
+import type { ILayoutSizeProps } from '../Containers/ILayoutSizeProps.js';
+import { useTranslate } from '../localization/useTranslate.js';
+import { s } from '../s.js';
+import { Tag } from '../Tags/Tag.js';
+import { Tags } from '../Tags/Tags.js';
+import { UploadArea } from '../UploadArea.js';
+import { useCombinedHandler } from '../useCombinedHandler.js';
+import { useRefInherit } from '../useRefInherit.js';
+import { useS } from '../useS.js';
+import { useStateDelay } from '../useStateDelay.js';
+import { Field } from './Field.js';
+import { FieldDescription } from './FieldDescription.js';
+import { FieldLabel } from './FieldLabel.js';
+import { FormContext } from './FormContext.js';
+import InputFilesStyles from './InputFiles.module.css';
+import { isControlPresented } from './isControlPresented.js';
 
 type BaseProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'name' | 'value' | 'style'> &
   ILayoutSizeProps & {
     error?: boolean;
     loading?: boolean;
     description?: string;
+    buttonText?: string;
     labelTooltip?: string;
     hideTags?: boolean;
     ref?: React.Ref<HTMLInputElement>;
@@ -72,6 +73,7 @@ export const InputFiles: InputFilesType = observer(
       error,
       loading,
       description,
+      buttonText,
       labelTooltip,
       hideTags,
       autoHide,
@@ -142,7 +144,7 @@ export const InputFiles: InputFilesType = observer(
       const dt = new DataTransfer();
 
       for (let i = 0; i < value.length; i++) {
-        const file = value[i];
+        const file = value[i]!;
         if (index !== i) {
           dt.items.add(file);
         }
@@ -167,6 +169,12 @@ export const InputFiles: InputFilesType = observer(
 
     const files = Array.from(value ?? []);
 
+    let text = buttonText;
+
+    if (!text) {
+      text = translate(rest.multiple ? 'ui_upload_files' : 'ui_upload_file');
+    }
+
     return (
       <Field {...layoutProps} className={s(styles, { field: true }, className)}>
         <FieldLabel title={labelTooltip || rest.title} required={required} className={s(styles, { fieldLabel: true })}>
@@ -175,7 +183,7 @@ export const InputFiles: InputFilesType = observer(
         <div className={s(styles, { inputContainer: true })}>
           <UploadArea ref={ref} {...rest} name={name} value={value} required={required} onChange={handleChange}>
             <Button icon="/icons/import.svg" tag="div" loading={loading} mod={['outlined']}>
-              {translate(rest.multiple ? 'ui_upload_files' : 'ui_upload_file')}
+              {text}
             </Button>
           </UploadArea>
           {!hideTags && (

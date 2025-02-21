@@ -7,16 +7,18 @@
  */
 import { makeObservable, observable } from 'mobx';
 
-import { Executor, IExecutor } from '@cloudbeaver/core-executor';
+import { Executor, type IExecutor } from '@cloudbeaver/core-executor';
 
-import { Bootstrap } from './Bootstrap';
-import { Dependency } from './Dependency';
-import type { DIContainer } from './DIContainer';
-import type { IServiceCollection, IServiceConstructor, IServiceInjector } from './IApp';
-import { IDiWrapper, inversifyWrapper } from './inversifyWrapper';
-import type { PluginManifest } from './PluginManifest';
+import { Bootstrap } from './Bootstrap.js';
+import { Dependency } from './Dependency.js';
+import type { DIContainer } from './DIContainer.js';
+import type { IServiceCollection, IServiceConstructor } from './IApp.js';
+import { type IDiWrapper, inversifyWrapper } from './inversifyWrapper.js';
+import { IServiceProvider } from './IServiceProvider.js';
+import type { PluginManifest } from './PluginManifest.js';
 
 export interface IStartData {
+  restart: boolean;
   preload: boolean;
 }
 
@@ -29,11 +31,14 @@ export class App {
 
   constructor(plugins: PluginManifest[] = []) {
     this.plugins = plugins;
-    this.onStart = new Executor();
+    this.onStart = new Executor<IStartData>(undefined, () => true);
     this.loadedServices = new Map();
     this.isAppServiceBound = false;
 
-    this.onStart.addHandler(async ({ preload }) => {
+    this.onStart.addHandler(async ({ restart, preload }) => {
+      if (preload && restart) {
+        this.dispose();
+      }
       await this.registerServices(preload);
       await this.initializeServices(preload);
       await this.loadServices(preload);
@@ -44,14 +49,13 @@ export class App {
     });
   }
 
-  async start(): Promise<void> {
-    await this.onStart.execute({ preload: true });
-    await this.onStart.execute({ preload: false });
+  async start(restart = false): Promise<void> {
+    await this.onStart.execute({ preload: true, restart });
+    await this.onStart.execute({ preload: false, restart });
   }
 
   async restart(): Promise<void> {
-    this.dispose();
-    await this.start();
+    await this.start(true);
   }
 
   dispose(): void {
@@ -80,8 +84,8 @@ export class App {
     this.plugins.push(manifest);
   }
 
-  getServiceInjector(): IServiceInjector {
-    return this.diWrapper.injector;
+  getServiceProvider(): IServiceProvider {
+    return this.diWrapper.injector.resolveServiceByClass(IServiceProvider);
   }
 
   getServiceCollection(): IServiceCollection {
@@ -92,6 +96,7 @@ export class App {
   private async registerServices(preload?: boolean): Promise<void> {
     if (!this.isAppServiceBound) {
       this.getServiceCollection().addServiceByClass(App, this);
+      this.getServiceCollection().addServiceByClass(IServiceProvider, new IServiceProvider(this.diWrapper.injector));
       this.isAppServiceBound = true;
     }
 

@@ -8,22 +8,26 @@
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef } from 'react';
 
-import { s, useS } from '../index';
-import SlideBoxStyles from './SlideBox.m.css';
-import SlideBoxElementStyles from './SlideElement.m.css';
-import SlideBoxOverlayStyles from './SlideOverlay.m.css';
+import { s, useHotkeys, useMergeRefs, useS } from '../index.js';
+import SlideBoxStyles from './SlideBox.module.css';
+import SlideBoxElementStyles from './SlideElement.module.css';
+import SlideBoxOverlayStyles from './SlideOverlay.module.css';
 
 interface Props {
   className?: string;
   children?: React.ReactNode;
   open?: boolean;
+  onClose?: () => void;
 }
 
-export const SlideBox = observer<Props>(function SlideBox({ children, open, className }) {
+export const SlideBox = observer<Props>(function SlideBox({ children, open, className, onClose }) {
   const slideBoxStyles = useS(SlideBoxStyles);
   const slideBoxElementStyles = useS(SlideBoxElementStyles);
   const slideBoxOverlayStyles = useS(SlideBoxOverlayStyles);
+
   const divRef = useRef<HTMLDivElement>(null);
+  const ref = useHotkeys('escape', () => onClose?.(), { enabled: open });
+  const mergedRefs = useMergeRefs(ref, divRef);
 
   useEffect(() => {
     const div = divRef.current;
@@ -48,7 +52,7 @@ export const SlideBox = observer<Props>(function SlideBox({ children, open, clas
 
   return (
     <div
-      ref={divRef}
+      ref={mergedRefs}
       className={s(slideBoxStyles, { slideBox: true }, s(slideBoxElementStyles, { open }), s(slideBoxOverlayStyles, { open }), className)}
     >
       {children}

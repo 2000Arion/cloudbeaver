@@ -13,16 +13,15 @@ import { useService } from '@cloudbeaver/core-di';
 import { TabList, TabPanelList, TabPanelStyles, TabsState, TabStyles } from '@cloudbeaver/core-ui';
 import { MetadataMap } from '@cloudbeaver/core-utils';
 
-import { DatabaseDataResultAction } from '../../DatabaseDataModel/Actions/DatabaseDataResultAction';
-import { DatabaseMetadataAction } from '../../DatabaseDataModel/Actions/DatabaseMetadataAction';
-import { DatabaseSelectAction } from '../../DatabaseDataModel/Actions/DatabaseSelectAction';
-import type { IDatabaseResultSet } from '../../DatabaseDataModel/IDatabaseResultSet';
-import type { DataPresentationComponent } from '../../DataPresentationService';
-import { DataValuePanelService } from './DataValuePanelService';
-import styles from './shared/ValuePanel.m.css';
-import ValuePanelEditorTabPanel from './shared/ValuePanelEditorTabPanel.m.css';
-import ValuePanelEditorTabs from './shared/ValuePanelEditorTabs.m.css';
-import ValuePanelTab from './shared/ValuePanelTab.m.css';
+import { DatabaseDataResultAction } from '../../DatabaseDataModel/Actions/DatabaseDataResultAction.js';
+import { DatabaseMetadataAction } from '../../DatabaseDataModel/Actions/DatabaseMetadataAction.js';
+import { DatabaseSelectAction } from '../../DatabaseDataModel/Actions/DatabaseSelectAction.js';
+import type { DataPresentationComponent } from '../../DataPresentationService.js';
+import { DataValuePanelService } from './DataValuePanelService.js';
+import styles from './shared/ValuePanel.module.css';
+import ValuePanelEditorTabPanel from './shared/ValuePanelEditorTabPanel.module.css';
+import ValuePanelEditorTabs from './shared/ValuePanelEditorTabs.module.css';
+import ValuePanelTab from './shared/ValuePanelTab.module.css';
 
 const tabListRegistry: StyleRegistry = [[TabStyles, { mode: 'append', styles: [ValuePanelTab] }]];
 
@@ -31,7 +30,7 @@ const tabPanelListRegistry: StyleRegistry = [
   [TabPanelStyles, { mode: 'append', styles: [ValuePanelEditorTabPanel] }],
 ];
 
-export const ValuePanel: DataPresentationComponent<any, IDatabaseResultSet> = observer(function ValuePanel({ dataFormat, model, resultIndex }) {
+export const ValuePanel: DataPresentationComponent = observer(function ValuePanel({ dataFormat, model, resultIndex }) {
   const service = useService(DataValuePanelService);
   const selectAction = model.source.getActionImplementation(resultIndex, DatabaseSelectAction);
   const dataResultAction = model.source.getActionImplementation(resultIndex, DatabaseDataResultAction);
@@ -64,7 +63,7 @@ export const ValuePanel: DataPresentationComponent<any, IDatabaseResultSet> = ob
   const hasCurrentTabCells = currentTabId && displayed.some(tab => tab.key === currentTabId);
 
   if (displayed.length > 0 && !hasCurrentTabCells) {
-    currentTabId = displayed[0].key;
+    currentTabId = displayed[0]!.key;
   }
 
   return (

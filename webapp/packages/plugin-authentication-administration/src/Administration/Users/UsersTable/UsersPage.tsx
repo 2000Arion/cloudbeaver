@@ -11,14 +11,14 @@ import { AuthRolesResource } from '@cloudbeaver/core-authentication';
 import { ColoredContainer, Container, Group, Placeholder, useAutoLoad, useResource } from '@cloudbeaver/core-blocks';
 import { useService } from '@cloudbeaver/core-di';
 
-import { AdministrationUsersManagementService } from '../../../AdministrationUsersManagementService';
-import { CreateUser } from './CreateUser';
-import { CreateUserService } from './CreateUserService';
-import { UsersTableFilters } from './Filters/UsersTableFilters';
-import { useUsersTableFilters } from './Filters/useUsersTableFilters';
-import { UsersAdministrationToolsPanel } from './UsersAdministrationToolsPanel';
-import { UsersTable } from './UsersTable';
-import { useUsersTable } from './useUsersTable';
+import { AdministrationUsersManagementService } from '../../../AdministrationUsersManagementService.js';
+import { CreateUser } from './CreateUser.js';
+import { CreateUserService } from './CreateUserService.js';
+import { UsersTableFilters } from './Filters/UsersTableFilters.js';
+import { useUsersTableFilters } from './Filters/useUsersTableFilters.js';
+import { UsersAdministrationToolsPanel } from './UsersAdministrationToolsPanel.js';
+import { UsersTable } from './UsersTable.js';
+import { useUsersTable } from './useUsersTable.js';
 
 interface Props {
   param?: string | null;
@@ -36,7 +36,7 @@ export const UsersPage = observer<Props>(function UsersPage({ param }) {
   const create = param === 'create';
   const displayAuthRole = authRolesResource.data.length > 0;
   const loading = authRolesResource.isLoading() || table.loadableState.isLoading();
-  const userManagementDisabled = administrationUsersManagementService.externalUserProviderEnabled;
+  const isManageable = !administrationUsersManagementService.externalUserProviderEnabled;
 
   return (
     <ColoredContainer vertical wrap gap parent maximum>
@@ -49,7 +49,7 @@ export const UsersPage = observer<Props>(function UsersPage({ param }) {
       </Group>
 
       <Container overflow gap maximum>
-        {create && createUserService.state && !userManagementDisabled && (
+        {create && createUserService.state && isManageable && (
           <CreateUser state={createUserService.state} onCancel={createUserService.cancelCreate} />
         )}
 
@@ -63,6 +63,7 @@ export const UsersPage = observer<Props>(function UsersPage({ param }) {
             displayAuthRole={displayAuthRole}
             loading={loading}
             hasMore={table.hasMore}
+            isManageable={isManageable}
             onLoadMore={table.loadMore}
           />
         </Group>

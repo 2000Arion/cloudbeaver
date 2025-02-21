@@ -1,5 +1,6 @@
 {
   "name": "@cloudbeaver/plugin-version-update-administration",
+  "type": "module",
   "sideEffects": [
     "src/**/*.css",
     "src/**/*.scss",
@@ -8,33 +9,38 @@
   "version": "0.1.0",
   "description": "",
   "license": "Apache-2.0",
-  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc -b",
     "clean": "rimraf --glob dist",
     "lint": "eslint ./src/ --ext .ts,.tsx",
-    "lint-fix": "eslint ./src/ --ext .ts,.tsx --fix",
-    "validate-dependencies": "core-cli-validate-dependencies",
-    "update-ts-references": "yarn run clean && typescript-resolve-references"
+    "validate-dependencies": "core-cli-validate-dependencies"
   },
   "dependencies": {
-    "@cloudbeaver/core-administration": "~0.1.0",
-    "@cloudbeaver/core-blocks": "~0.1.0",
-    "@cloudbeaver/core-di": "~0.1.0",
-    "@cloudbeaver/core-localization": "~0.1.0",
-    "@cloudbeaver/core-resource": "~0.1.0",
-    "@cloudbeaver/core-root": "~0.1.0",
-    "@cloudbeaver/core-ui": "~0.1.0",
-    "@cloudbeaver/core-version": "~0.1.0",
-    "@cloudbeaver/core-version-update": "~0.1.0",
-    "mobx-react-lite": "^4.0.5",
-    "react": "^18.2.0",
-    "react-markdown": "^9.0.1"
+    "@cloudbeaver/core-administration": "workspace:*",
+    "@cloudbeaver/core-blocks": "workspace:*",
+    "@cloudbeaver/core-di": "workspace:*",
+    "@cloudbeaver/core-localization": "workspace:*",
+    "@cloudbeaver/core-resource": "workspace:*",
+    "@cloudbeaver/core-root": "workspace:*",
+    "@cloudbeaver/core-ui": "workspace:*",
+    "@cloudbeaver/core-version": "workspace:*",
+    "@cloudbeaver/core-version-update": "workspace:*",
+    "@cloudbeaver/plugin-product-information-administration": "workspace:*",
+    "mobx": "^6",
+    "mobx-react-lite": "^4",
+    "react": "^19",
+    "react-dom": "^19",
+    "react-markdown": "^9",
+    "tslib": "^2"
   },
-  "peerDependencies": {},
   "devDependencies": {
-    "@types/react": "^18.2.63",
-    "typescript": "^5.3.3",
-    "typescript-plugin-css-modules": "^5.1.0"
+    "@cloudbeaver/core-cli": "workspace:*",
+    "@cloudbeaver/tsconfig": "workspace:*",
+    "@types/react": "^19",
+    "typescript": "^5",
+    "typescript-plugin-css-modules": "^5"
   }
 }

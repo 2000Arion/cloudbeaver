@@ -7,15 +7,15 @@
  */
 import { observer } from 'mobx-react-lite';
 
-import { s, SContext, StyleRegistry, useS } from '@cloudbeaver/core-blocks';
+import { s, SContext, type StyleRegistry, useS } from '@cloudbeaver/core-blocks';
 import type { IDataContext } from '@cloudbeaver/core-data-context';
 import { MenuBar, MenuBarItemStyles, MenuBarStyles } from '@cloudbeaver/core-ui';
 import { useMenu } from '@cloudbeaver/core-view';
 
-import type { ISqlEditorTabState } from '../ISqlEditorTabState';
-import { SQL_EDITOR_ACTIONS_MENU } from './SQL_EDITOR_ACTIONS_MENU';
-import SqlEditorActionsMenuBarStyles from './SqlEditorActionsMenuBar.m.css';
-import SqlEditorActionsMenuBarItemStyles from './SqlEditorActionsMenuBarItem.m.css';
+import type { ISqlEditorTabState } from '../ISqlEditorTabState.js';
+import { SQL_EDITOR_ACTIONS_MENU } from './SQL_EDITOR_ACTIONS_MENU.js';
+import SqlEditorActionsMenuBarStyles from './SqlEditorActionsMenuBar.module.css';
+import SqlEditorActionsMenuBarItemStyles from './SqlEditorActionsMenuBarItem.module.css';
 
 interface Props {
   state: ISqlEditorTabState;

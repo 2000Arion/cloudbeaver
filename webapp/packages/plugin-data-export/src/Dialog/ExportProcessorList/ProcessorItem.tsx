@@ -11,7 +11,7 @@ import { useCallback } from 'react';
 import { ListItem, ListItemDescription, ListItemIcon, ListItemName, StaticImage } from '@cloudbeaver/core-blocks';
 import type { DataTransferProcessorInfo } from '@cloudbeaver/core-sdk';
 
-import style from './ProcessorItem.m.css';
+import style from './ProcessorItem.module.css';
 
 interface Props {
   processor: DataTransferProcessorInfo;
@@ -24,7 +24,7 @@ export const ProcessorItem = observer<Props>(function ProcessorItem({ processor,
   return (
     <ListItem onClick={select}>
       <ListItemIcon>
-        <StaticImage className={style.staticImage} icon={processor.icon} />
+        <StaticImage className={style['staticImage']} icon={processor.icon} />
       </ListItemIcon>
       <ListItemName>{processor.name}</ListItemName>
       <ListItemDescription title={processor.description}>{processor.description}</ListItemDescription>

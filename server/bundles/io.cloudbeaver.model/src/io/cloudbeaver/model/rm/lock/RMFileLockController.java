@@ -17,12 +17,13 @@
 package io.cloudbeaver.model.rm.lock;
 
 import com.google.gson.Gson;
-import io.cloudbeaver.model.app.WebApplication;
+import io.cloudbeaver.model.app.ServletApplication;
 import org.jkiss.code.NotNull;
 import org.jkiss.code.Nullable;
 import org.jkiss.dbeaver.DBException;
 import org.jkiss.dbeaver.Log;
 import org.jkiss.dbeaver.model.app.DBPWorkspace;
+import org.jkiss.utils.IOUtils;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -49,12 +50,12 @@ public class RMFileLockController {
     private final int maxLockTime;
 
 
-    public RMFileLockController(WebApplication application) throws DBException {
+    public RMFileLockController(ServletApplication application) throws DBException {
         this(application, DEFAULT_MAX_LOCK_TIME);
     }
 
     // for tests
-    public RMFileLockController(WebApplication application, int maxLockTime) throws DBException {
+    public RMFileLockController(ServletApplication application, int maxLockTime) throws DBException {
         this.lockFolderPath = application.getWorkspaceDirectory()
             .resolve(DBPWorkspace.METADATA_FOLDER)
             .resolve(LOCK_META_FOLDER);
@@ -73,18 +74,23 @@ public class RMFileLockController {
      * @return - lock
      */
     @NotNull
-    public RMLock lockProject(@NotNull String projectId,@NotNull  String operationName) throws DBException {
+    public RMLock lockProject(@NotNull String projectId, @NotNull String operationName) throws DBException {
         synchronized (RMFileLockController.class) {
             try {
-                createLockFolderIfNeeded();
-                createProjectFolder(projectId);
-                Path projectLockFile = getProjectLockFilePath(projectId);
-
                 RMLockInfo lockInfo = new RMLockInfo.Builder(projectId, UUID.randomUUID().toString())
                     .setApplicationId(applicationId)
                     .setOperationName(operationName)
                     .setOperationStartTime(System.currentTimeMillis())
                     .build();
+                Path projectLockFile = getProjectLockFilePath(projectId);
+
+                if (!IOUtils.isFileFromDefaultFS(lockFolderPath)) {
+                    // fake lock for external file system?
+                    return new RMLock(projectLockFile);
+                }
+                createLockFolderIfNeeded();
+                createProjectFolder(projectId);
+
                 createLockFile(projectLockFile, lockInfo);
                 return new RMLock(projectLockFile);
             } catch (Exception e) {

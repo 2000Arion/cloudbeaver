@@ -23,8 +23,7 @@ RUN set -eux; \
         tzdata \
         # locales ensures proper character encoding and locale-specific behaviors using en_US.UTF-8
         locales \
-        nano \
-    ; \
+        nano && \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen en_US.UTF-8; \
     rm -rf /var/lib/apt/lists/*
@@ -32,7 +31,7 @@ RUN set -eux; \
 ENV LANG=en_US.UTF-8
 
 ENV JAVA_HOME=/opt/java/openjdk
-COPY --from=eclipse-temurin:17 $JAVA_HOME $JAVA_HOME
+COPY --from=eclipse-temurin:21 $JAVA_HOME $JAVA_HOME
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 RUN set -eux; \

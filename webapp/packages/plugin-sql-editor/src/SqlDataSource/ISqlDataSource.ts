@@ -8,11 +8,11 @@
 import type { IConnectionExecutionContextInfo } from '@cloudbeaver/core-connections';
 import type { ISyncExecutor } from '@cloudbeaver/core-executor';
 import type { ILoadableState } from '@cloudbeaver/core-utils';
-import type { IDatabaseDataModel, IDatabaseResultSet } from '@cloudbeaver/plugin-data-viewer';
+import type { IDatabaseDataModel } from '@cloudbeaver/plugin-data-viewer';
 
-import type { IDataQueryOptions } from '../QueryDataSource';
-import type { ESqlDataSourceFeatures } from './ESqlDataSourceFeatures';
-import type { ISqlDataSourceHistory } from './SqlDataSourceHistory/ISqlDataSourceHistory';
+import type { QueryDataSource } from '../QueryDataSource.js';
+import type { ESqlDataSourceFeatures } from './ESqlDataSourceFeatures.js';
+import type { ISqlDataSourceHistory } from './SqlDataSourceHistory/ISqlDataSourceHistory.js';
 
 export interface ISqlDataSourceKey {
   readonly key: string;
@@ -24,8 +24,8 @@ export interface ISetScriptData {
 }
 
 export interface ISqlEditorCursor {
-  readonly begin: number;
-  readonly end: number;
+  readonly anchor: number;
+  readonly head: number;
 }
 
 export interface ISqlDataSource extends ILoadableState {
@@ -42,7 +42,7 @@ export interface ISqlDataSource extends ILoadableState {
   readonly incomingScript?: string;
   readonly history: ISqlDataSourceHistory;
 
-  readonly databaseModels: IDatabaseDataModel<IDataQueryOptions, IDatabaseResultSet>[];
+  readonly databaseModels: IDatabaseDataModel<QueryDataSource>[];
   readonly executionContext?: IConnectionExecutionContextInfo;
 
   readonly features: ESqlDataSourceFeatures[];
@@ -55,7 +55,7 @@ export interface ISqlDataSource extends ILoadableState {
 
   readonly onUpdate: ISyncExecutor;
   readonly onSetScript: ISyncExecutor<ISetScriptData>;
-  readonly onDatabaseModelUpdate: ISyncExecutor<IDatabaseDataModel<IDataQueryOptions, IDatabaseResultSet>[]>;
+  readonly onDatabaseModelUpdate: ISyncExecutor<IDatabaseDataModel<QueryDataSource>[]>;
 
   isOpened(): boolean;
   isReadonly(): boolean;
@@ -71,7 +71,7 @@ export interface ISqlDataSource extends ILoadableState {
   setName(name: string | null): void;
   setProject(projectId: string | null): void;
   setScript(script: string, source?: string): void;
-  setCursor(begin: number, end?: number): void;
+  setCursor(anchor: number, head?: number): void;
   setEditing(state: boolean): void;
   setExecutionContext(executionContext?: IConnectionExecutionContextInfo): void;
   setIncomingExecutionContext(executionContext?: IConnectionExecutionContextInfo): void;

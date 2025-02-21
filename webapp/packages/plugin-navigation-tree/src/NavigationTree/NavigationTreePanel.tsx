@@ -10,8 +10,8 @@ import { observer } from 'mobx-react-lite';
 import { s, useS } from '@cloudbeaver/core-blocks';
 import type { TabContainerPanelComponent } from '@cloudbeaver/core-ui';
 
-import { NavigationTreeLoader } from './NavigationTreeLoader';
-import style from './NavigationTreePanel.m.css';
+import { NavigationTreeLoader } from './NavigationTreeLoader.js';
+import style from './NavigationTreePanel.module.css';
 
 export const NavigationTreePanel: TabContainerPanelComponent = observer(function NavigationTreePanel() {
   const styles = useS(style);

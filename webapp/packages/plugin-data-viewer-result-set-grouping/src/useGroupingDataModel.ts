@@ -6,36 +6,38 @@
  * you may not use this file except in compliance with the License.
  */
 import { reaction } from 'mobx';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useObjectRef, useResource } from '@cloudbeaver/core-blocks';
 import { ConnectionInfoResource, createConnectionParam } from '@cloudbeaver/core-connections';
-import { App, useService } from '@cloudbeaver/core-di';
-import { AsyncTaskInfoService, GraphQLService } from '@cloudbeaver/core-sdk';
+import { IServiceProvider, useService } from '@cloudbeaver/core-di';
+import { AsyncTaskInfoService } from '@cloudbeaver/core-root';
+import { GraphQLService } from '@cloudbeaver/core-sdk';
 import { isObjectsEqual } from '@cloudbeaver/core-utils';
 import {
   DatabaseDataAccessMode,
   DatabaseDataModel,
   DataViewerSettingsService,
-  IDatabaseDataModel,
-  IDatabaseResultSet,
+  type IDatabaseDataModel,
+  ResultSetDataSource,
   TableViewerStorageService,
 } from '@cloudbeaver/plugin-data-viewer';
 
-import { GroupingDataSource, IDataGroupingOptions } from './GroupingDataSource';
-import type { IGroupingQueryState } from './IGroupingQueryState';
+import { GroupingDataSource } from './GroupingDataSource.js';
+import type { IDVResultSetGroupingPresentationState } from './IDVResultSetGroupingPresentationState.js';
+import type { IGroupingQueryState } from './IGroupingQueryState.js';
 
 export interface IGroupingDataModel {
-  model: IDatabaseDataModel<IDataGroupingOptions, IDatabaseResultSet>;
+  model: IDatabaseDataModel<GroupingDataSource>;
 }
 
 export function useGroupingDataModel(
-  sourceModel: IDatabaseDataModel<any, IDatabaseResultSet>,
+  sourceModel: IDatabaseDataModel<ResultSetDataSource>,
   sourceResultIndex: number,
-  state: IGroupingQueryState,
+  state: IGroupingQueryState & IDVResultSetGroupingPresentationState,
 ): IGroupingDataModel {
   const tableViewerStorageService = useService(TableViewerStorageService);
-  const app = useService(App);
+  const serviceProvider = useService(IServiceProvider);
   const graphQLService = useService(GraphQLService);
   const asyncTaskInfoService = useService(AsyncTaskInfoService);
   const dataViewerSettingsService = useService(DataViewerSettingsService);
@@ -49,9 +51,22 @@ export function useGroupingDataModel(
 
   const model = useObjectRef(
     () => {
-      const source = new GroupingDataSource(app.getServiceInjector(), graphQLService, asyncTaskInfoService);
+      if (tableViewerStorageService.has(state.modelId)) {
+        const model = tableViewerStorageService.get(state.modelId) as IDatabaseDataModel<GroupingDataSource>;
+        return {
+          source: model.source,
+          model,
+          dispose() {
+            this.model.dispose();
+            tableViewerStorageService.remove(state.modelId);
+          },
+        };
+      }
+      const source = new GroupingDataSource(serviceProvider, graphQLService, asyncTaskInfoService);
 
+      source.setKeepExecutionContextOnDispose(true);
       const model = tableViewerStorageService.add(new DatabaseDataModel(source));
+      state.modelId = model.id;
 
       model.setAccess(DatabaseDataAccessMode.Readonly).setCountGain(dataViewerSettingsService.getDefaultRowsCount()).setSlice(0);
 
@@ -68,6 +83,13 @@ export function useGroupingDataModel(
     ['dispose'],
   );
 
+  const prevStateRef = useRef({
+    columns: state.columns,
+    functions: state.functions,
+    showDuplicatesOnly: state.showDuplicatesOnly,
+    sourceResultId: sourceModel.source.getResult(sourceResultIndex)?.id,
+  });
+
   useEffect(() => {
     sourceModel.onDispose.addHandler(model.dispose);
     return () => {
@@ -78,7 +100,7 @@ export function useGroupingDataModel(
   useEffect(() => {
     const sub = reaction(
       () => {
-        const result = sourceModel.source.hasResult(sourceResultIndex) ? sourceModel.source.getResult(sourceResultIndex) : null;
+        const result = sourceModel.source.getResult(sourceResultIndex);
 
         return {
           columns: state.columns,
@@ -87,17 +109,32 @@ export function useGroupingDataModel(
           sourceResultId: result?.id,
         };
       },
-      async ({ columns, functions, sourceResultId }) => {
+      async ({ columns, functions, sourceResultId, showDuplicatesOnly }) => {
+        const prevState = prevStateRef.current;
+
+        if (
+          columns == prevState.columns &&
+          functions == prevState.functions &&
+          sourceResultId == prevState.sourceResultId &&
+          showDuplicatesOnly == prevState.showDuplicatesOnly
+        ) {
+          return;
+        }
+
+        prevStateRef.current = { columns, functions, sourceResultId, showDuplicatesOnly };
+
         if (columns.length !== 0 && functions.length !== 0 && sourceResultId) {
           const executionContext = sourceModel.source.executionContext;
-          model.model.source.setExecutionContext(executionContext).setSupportedDataFormats(connectionInfo?.supportedDataFormats ?? []);
+          model.source.setExecutionContext(executionContext).setSupportedDataFormats(connectionInfo?.supportedDataFormats ?? []);
           const context = executionContext?.context;
 
           if (context) {
             const connectionKey = createConnectionParam(context.projectId, context.connectionId);
 
             model.model
-              .setOptions({
+              .setCountGain(dataViewerSettingsService.getDefaultRowsCount())
+              .setSlice(0)
+              .source.setOptions({
                 query: '',
                 columns,
                 functions,
@@ -107,9 +144,7 @@ export function useGroupingDataModel(
                 constraints: [],
                 whereFilter: '',
               })
-              .setCountGain(dataViewerSettingsService.getDefaultRowsCount())
-              .setSlice(0)
-              .source.resetData();
+              .resetData();
           }
         } else {
           model.model
@@ -127,9 +162,5 @@ export function useGroupingDataModel(
     return sub;
   }, [state, sourceModel, sourceResultIndex]);
 
-  useEffect(() => model.dispose, []);
-
-  return {
-    model: model.model,
-  };
+  return model;
 }

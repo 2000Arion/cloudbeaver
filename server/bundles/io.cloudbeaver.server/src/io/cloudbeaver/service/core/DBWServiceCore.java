@@ -38,8 +38,14 @@ import java.util.Map;
  */
 public interface DBWServiceCore extends DBWService {
 
-    @WebAction(authRequired = false)
+    @WebAction(authRequired = false, initializationRequired = false)
     WebServerConfig getServerConfig() throws DBWebException;
+
+    /**
+     * Returns information of system.
+     */
+    @WebAction(authRequired = false)
+    WebPropertyInfo[] getSystemInformationProperties(@NotNull WebSession webSession);
 
     @WebAction(authRequired = false)
     WebProductSettings getProductSettings(@NotNull WebSession webSession);
@@ -121,8 +127,8 @@ public interface DBWServiceCore extends DBWService {
         @NotNull String connectionId,
         @NotNull Map<String, Object> authProperties,
         @Nullable List<WebNetworkHandlerConfigInput> networkCredentials,
-        @Nullable Boolean saveCredentials,
-        @Nullable Boolean sharedCredentials,
+        boolean saveCredentials,
+        boolean sharedCredentials,
         @Nullable String selectedCredentials
     ) throws DBWebException;
 
@@ -146,6 +152,7 @@ public interface DBWServiceCore extends DBWService {
         @NotNull String connectionId) throws DBWebException;
 
     @WebAction
+    @Deprecated
     WebConnectionInfo createConnectionFromTemplate(
         @NotNull WebSession webSession,
         @NotNull String projectId,

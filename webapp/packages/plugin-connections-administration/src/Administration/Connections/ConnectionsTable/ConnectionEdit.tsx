@@ -9,11 +9,11 @@ import { observer } from 'mobx-react-lite';
 import { useMemo } from 'react';
 
 import { Loader, s, useS } from '@cloudbeaver/core-blocks';
-import { ConnectionInfoResource, IConnectionInfoParams } from '@cloudbeaver/core-connections';
+import { ConnectionInfoOriginResource, ConnectionInfoResource, type IConnectionInfoParams } from '@cloudbeaver/core-connections';
 import { useService } from '@cloudbeaver/core-di';
 import { ConnectionFormLoader, useConnectionFormState } from '@cloudbeaver/plugin-connections';
 
-import styles from './ConnectionEdit.m.css';
+import styles from './ConnectionEdit.module.css';
 
 interface Props {
   item: IConnectionInfoParams;
@@ -21,10 +21,11 @@ interface Props {
 
 export const ConnectionEdit = observer<Props>(function ConnectionEditNew({ item }) {
   const connectionInfoResource = useService(ConnectionInfoResource);
+  const connectionInfoOriginResource = useService(ConnectionInfoOriginResource);
   // const tableContext = useContext(TableContext);
   // const collapse = useCallback(() => tableContext?.setItemExpand(item, false), [tableContext, item]);
 
-  const data = useConnectionFormState(connectionInfoResource, state => state.setOptions('edit', 'admin'));
+  const data = useConnectionFormState(connectionInfoResource, connectionInfoOriginResource, state => state.setOptions('edit', 'admin'));
   const style = useS(styles);
 
   const projectId = item.projectId;

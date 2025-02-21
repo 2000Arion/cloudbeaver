@@ -9,9 +9,9 @@ import { makeObservable, observable } from 'mobx';
 
 import type { MetadataMap, MetadataValueGetter, schema } from '@cloudbeaver/core-utils';
 
-import type { ITabInfo, ITabInfoOptions, ITabsContainer } from './ITabsContainer';
+import type { ITabInfo, ITabInfoOptions, ITabsContainer } from './ITabsContainer.js';
 
-export class TabsContainer<TProps = void, TOptions extends Record<string, any> = never> implements ITabsContainer<TProps, TOptions> {
+export class TabsContainer<TProps = void, TOptions extends Record<string, any> | unknown = unknown> implements ITabsContainer<TProps, TOptions> {
   readonly areaLabel: string;
   readonly tabInfoMap: Map<string, ITabInfo<TProps, TOptions>>;
 

@@ -1,14 +1,9 @@
-export * from './CommonDialog/CommonDialogService';
-
-export * from './Menu/IMenuPanel';
-export * from './Menu/StaticMenu/StaticMenu';
-
-export * from './Menu/models/ComputedContextMenuModel';
-export * from './Menu/models/ComputedMenuItemModel';
-export * from './Menu/models/ComputedMenuPanelModel';
-
-// contextMenu
-export * from './Menu/ContextMenu/ContextMenuService';
-export * from './Menu/ContextMenu/IContextMenuItem';
-export * from './Menu/ContextMenu/IMenuContext';
-export * from './manifest';
+/*
+ * CloudBeaver - Cloud Database Manager
+ * Copyright (C) 2020-2024 DBeaver Corp and others
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * you may not use this file except in compliance with the License.
+ */
+export * from './CommonDialog/CommonDialogService.js';
+export * from './manifest.js';

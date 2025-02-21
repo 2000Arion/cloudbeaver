@@ -8,12 +8,12 @@
 import { observer } from 'mobx-react-lite';
 import { useContext } from 'react';
 
-import { Icon } from '../Icon';
-import { Link } from '../Link';
-import { s } from '../s';
-import { useS } from '../useS';
-import { FolderExplorerContext } from './FolderExplorerContext';
-import style from './FolderName.m.css';
+import { Icon } from '../Icon.js';
+import { Link } from '../Link.js';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import { FolderExplorerContext } from './FolderExplorerContext.js';
+import style from './FolderName.module.css';
 
 interface BaseProps {
   folder?: string;

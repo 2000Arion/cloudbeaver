@@ -2,7 +2,7 @@
 <feature
         id="io.cloudbeaver.server.feature"
         label="%featureName"
-        version="24.1.0.qualifier"
+        version="25.0.0.qualifier"
         provider-name="%providerName"
         plugin="io.cloudbeaver.server">
 
@@ -15,7 +15,6 @@
     </copyright>
 
     <requires>
-        <import plugin="org.eclipse.core.resources" version="0.0.0" match="greaterOrEqual"/>
         <import plugin="org.eclipse.core.runtime" version="3.7" match="greaterOrEqual"/>
         <!-- Equinox -->
         <import plugin="org.eclipse.equinox.common" version="0.0.0" match="greaterOrEqual"/>
@@ -32,6 +31,7 @@
 
     <plugin id="org.jkiss.dbeaver.launcher" version="0.0.0"/>
     <plugin id="io.cloudbeaver.server" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
+    <plugin id="io.cloudbeaver.server.ce" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
     <plugin id="io.cloudbeaver.service.admin" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
     <plugin id="io.cloudbeaver.service.auth" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
     <plugin id="io.cloudbeaver.service.data.transfer" download-size="0" install-size="0" version="0.0.0" unpack="false"/>

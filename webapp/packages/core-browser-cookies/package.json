@@ -1,5 +1,6 @@
 {
   "name": "@cloudbeaver/core-browser-cookies",
+  "type": "module",
   "sideEffects": [
     "src/**/*.css",
     "src/**/*.scss",
@@ -8,22 +9,24 @@
   "version": "0.1.0",
   "description": "",
   "license": "Apache-2.0",
-  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc -b",
     "clean": "rimraf --glob dist",
     "lint": "eslint ./src/ --ext .ts,.tsx",
-    "lint-fix": "eslint ./src/ --ext .ts,.tsx --fix",
     "test": "core-cli-test",
-    "validate-dependencies": "core-cli-validate-dependencies",
-    "update-ts-references": "yarn run clean && typescript-resolve-references"
+    "validate-dependencies": "core-cli-validate-dependencies"
   },
   "dependencies": {
-    "@cloudbeaver/core-browser-settings": "~0.1.0",
-    "@cloudbeaver/core-di": "~0.1.0"
+    "@cloudbeaver/core-browser-settings": "workspace:*",
+    "@cloudbeaver/core-di": "workspace:*",
+    "tslib": "^2"
   },
-  "peerDependencies": {},
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "@cloudbeaver/core-cli": "workspace:*",
+    "@cloudbeaver/tsconfig": "workspace:*",
+    "typescript": "^5"
   }
 }

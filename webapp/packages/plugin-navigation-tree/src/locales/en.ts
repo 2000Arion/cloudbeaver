@@ -1,10 +1,17 @@
+/*
+ * CloudBeaver - Cloud Database Manager
+ * Copyright (C) 2020-2024 DBeaver Corp and others
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * you may not use this file except in compliance with the License.
+ */
 export default [
   ['plugin_navigation_tree_explorer_tab_title', 'Explorer'],
   ['app_navigationTree_openNodeTab', 'Open'],
   ['app_navigationTree_search', 'Search elements...'],
   ['app_navigationTree_limited', 'Elements are limited to {arg:limit} items'],
-  ['app_navigationTree_action_link_with_editor', 'Link with editor'],
   ['app_navigationTree_action_collapse_all', 'Collapse all'],
+  ['app_navigationTree_settings_filter_objects_description', 'Show objects description'],
   ['app_navigationTree_settings_filter_title', 'Filter'],
   ['app_navigationTree_settings_filter_description', 'Show filtering field'],
   ['app_navigationTree_settings_filter_all_title', 'Show collapsed'],
@@ -36,4 +43,6 @@ export default [
   ['app_navigationTree_drop_here', 'Drop here...'],
   ['plugin_navigation_tree_settings_projects_description', 'Displays elements under project groups'],
   ['plugin_navigation_tree_settings_projects_title', 'Group by Project'],
+  ['plugin_navigation_tree_settings_disable', 'Disable'],
+  ['plugin_navigation_tree_settings_disable_description', 'Disable navigation tree for all users'],
 ];

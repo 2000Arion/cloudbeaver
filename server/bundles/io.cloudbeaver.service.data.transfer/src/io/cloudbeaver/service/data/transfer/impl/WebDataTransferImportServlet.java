@@ -21,9 +21,10 @@ import io.cloudbeaver.DBWebException;
 import io.cloudbeaver.model.WebAsyncTaskInfo;
 import io.cloudbeaver.model.WebConnectionInfo;
 import io.cloudbeaver.model.session.WebSession;
-import io.cloudbeaver.server.CBApplication;
+import io.cloudbeaver.server.BaseWebPlatform;
 import io.cloudbeaver.server.CBConstants;
-import io.cloudbeaver.server.CBPlatform;
+import io.cloudbeaver.server.WebAppUtils;
+import io.cloudbeaver.server.WebApplication;
 import io.cloudbeaver.service.WebServiceServletBase;
 import io.cloudbeaver.service.data.transfer.DBWServiceDataTransfer;
 import io.cloudbeaver.service.sql.WebSQLContextInfo;
@@ -42,7 +43,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @MultipartConfig
 public class WebDataTransferImportServlet extends WebServiceServletBase {
@@ -53,7 +56,7 @@ public class WebDataTransferImportServlet extends WebServiceServletBase {
     DBWServiceDataTransfer dbwServiceDataTransfer;
 
 
-    public WebDataTransferImportServlet(CBApplication application, DBWServiceDataTransfer dbwServiceDataTransfer) {
+    public WebDataTransferImportServlet(WebApplication application, DBWServiceDataTransfer dbwServiceDataTransfer) {
         super(application);
         this.dbwServiceDataTransfer = dbwServiceDataTransfer;
     }
@@ -69,7 +72,8 @@ public class WebDataTransferImportServlet extends WebServiceServletBase {
             return;
         }
         if ("POST".equalsIgnoreCase(request.getMethod())) {
-            Path tempFolder = CBPlatform.getInstance().getTempFolder(session.getProgressMonitor(), CBPlatform.TEMP_FILE_IMPORT_FOLDER);
+            Path tempFolder = WebAppUtils.getWebPlatform().getTempFolder(session.getProgressMonitor(),
+                BaseWebPlatform.TEMP_FILE_IMPORT_FOLDER);
             MultipartConfigElement MULTI_PART_CONFIG = new MultipartConfigElement(tempFolder.toString());
 
             request.setAttribute(ECLIPSE_JETTY_MULTIPART_CONFIG, MULTI_PART_CONFIG);
@@ -86,7 +90,7 @@ public class WebDataTransferImportServlet extends WebServiceServletBase {
                 throw new IllegalArgumentException("Missing required parameters");
             }
 
-            WebConnectionInfo webConnectionInfo = session.getWebConnectionInfo(projectId, connectionId);
+            WebConnectionInfo webConnectionInfo = session.getAccessibleProjectById(projectId).getWebConnectionInfo(connectionId);
             WebSQLProcessor processor = WebServiceBindingSQL.getSQLProcessor(webConnectionInfo);
             WebSQLContextInfo webSQLContextInfo = processor.getContext(contextId);
 

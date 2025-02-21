@@ -1,6 +1,6 @@
 /*
  * CloudBeaver - Cloud Database Manager
- * Copyright (C) 2020-2024 DBeaver Corp and others
+ * Copyright (C) 2020-2025 DBeaver Corp and others
  *
  * Licensed under the Apache License, Version 2.0.
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,17 @@ export default [
   ['connections_connection_connect', 'Connect'],
   ['connections_connection_create_custom', 'Custom'],
   ['connections_connection_create_search_database', 'Search'],
-  ['connections_connection_edit_save_credentials', 'Save credentials'],
-  ['connections_connection_share_credentials', 'Share credentials'],
-  ['connections_connection_share_credentials_tooltip', 'Share credentials based on the team'],
+  ['connections_connection_authentication_save_credentials_for_session', 'Don’t ask again during the session'],
+  ['connections_connection_authentication_save_credentials_for_session_tooltip', 'These credentials will be removed after logout'],
+  ['connections_connection_authentication_save_credentials_for_user', 'Save credentials for the current user'],
+  ['connections_connection_authentication_save_credentials_for_user_tooltip', 'These credentials will be used to make automatic connection'],
+  ['connections_connection_edit_save_credentials_shared', 'Save credentials for all users with access'],
+  [
+    'connections_connection_edit_save_credentials_shared_tooltip',
+    'These credentials will be used to make automatic connection for all users having access',
+  ],
+  ['connections_connection_share_credentials', 'Share credentials with teammates'],
+  ['connections_connection_share_credentials_tooltip', 'These credentials will be used to make automatic connection for all users in a team'],
   ['connections_connection_credentials_provisioning', 'Authentication credentials'],
   ['connections_connection_credentials_provisioning_description', 'You need to fill in or confirm the credentials to test this connection'],
   ['connections_connection_edit_authentication', 'Authentication'],
@@ -46,11 +54,11 @@ export default [
   ['connections_connection_edit_search_hosts', 'Host names'],
   ['connections_connection_address', 'Address'],
   ['connections_connection_folder', 'Folder'],
-  ['connections_connection_folder_validation', "Folder's name may not contain the following symbols / : \" \\ and can't start with a dot"],
+  ['connections_connection_folder_validation', "Folder's name may not contain the following symbols / : \" \\ ' <> | ? * and can't start with a dot"],
   ['connections_connection_name', 'Connection name'],
   ['connections_connection_access_user_or_team_name', 'User or Team name'],
   ['connections_connection_access_filter_placeholder', 'Search for user or team name'],
-  ['connections_connection_access_admin_info', 'Administrators see all connections.'],
+  ['connections_connection_access_admin_info', 'Administrators see all connections except private connections of other users.'],
   ['connections_connection_description', 'Description'],
   ['connections_connection_project', 'Project'],
   ['connections_connection_driver', 'Driver'],
@@ -63,7 +71,10 @@ export default [
   ['connections_connection_test_fail', 'Connection test failed'],
   ['connections_connection_create_fail', 'Fail to create connection'],
   ['connections_connection_save_fail', 'Fail to save connection'],
+  ['connections_connection_expert_settings', 'Expert settings'],
   ['connections_connection_keep_alive', 'Keep alive (in seconds)'],
+  ['connections_connection_read_only', 'Read-only connection'],
+  ['connections_connection_autocommit', 'Auto commit'],
   ['connections_connection_keep_alive_tooltip', 'No auto disconnect'],
   ['connections_network_handler_test', 'Test Tunnel'],
   ['connections_network_handler_test_fail', 'Tunnel test failed'],
@@ -78,7 +89,7 @@ export default [
   ['connections_network_handler_ssh_tunnel_user', 'User'],
   ['connections_network_handler_ssh_tunnel_password', 'Password'],
   ['connections_network_handler_ssh_tunnel_auth_type', 'Authentication method'],
-  ['connections_network_handler_ssh_tunnel_private_key', 'Private key'],
+  ['connections_network_handler_ssh_tunnel_private_key', 'Private Key'],
   ['connections_network_handler_ssh_tunnel_advanced_settings', 'Advanced Settings'],
   ['connections_network_handler_ssh_tunnel_advanced_settings_alive_interval', 'Alive interval (ms)'],
   ['connections_network_handler_ssh_tunnel_advanced_settings_connect_timeout', 'Connect timeout (ms)'],
@@ -89,4 +100,10 @@ export default [
     'cloud_connections_access_placeholder',
     'Cloud connections are visible to all users. Access management can be configured in "AWS Management Console".',
   ],
+
+  ['core_connections_settings_disable', 'Disable'],
+  ['core_connections_settings_disable_description', 'Disable the ability to create new connections'],
+  ['connections_templates_deprecated_message', 'Template connections are deprecated and will be removed in future releases'],
+  ['core_connections_connection_driver_not_installed', 'Driver is not installed'],
+  ['core_connections_connection_temporary', 'Temporary connection'],
 ];

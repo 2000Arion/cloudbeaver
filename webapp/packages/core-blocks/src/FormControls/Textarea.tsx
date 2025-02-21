@@ -8,15 +8,21 @@
 import { observer } from 'mobx-react-lite';
 import { useCallback, useContext, useLayoutEffect, useRef } from 'react';
 
-import { filterLayoutFakeProps, getLayoutProps } from '../Containers/filterLayoutFakeProps';
-import type { ILayoutSizeProps } from '../Containers/ILayoutSizeProps';
-import { s } from '../s';
-import { useS } from '../useS';
-import { Field } from './Field';
-import { FieldDescription } from './FieldDescription';
-import { FieldLabel } from './FieldLabel';
-import { FormContext } from './FormContext';
-import textareaStyle from './Textarea.m.css';
+import { getTextFileReadingProcess } from '@cloudbeaver/core-utils';
+
+import { Button } from '../Button.js';
+import { filterLayoutFakeProps, getLayoutProps } from '../Containers/filterLayoutFakeProps.js';
+import type { ILayoutSizeProps } from '../Containers/ILayoutSizeProps.js';
+import { useTranslate } from '../localization/useTranslate.js';
+import { s } from '../s.js';
+import { UploadArea } from '../UploadArea.js';
+import { useCombinedHandler } from '../useCombinedHandler.js';
+import { useS } from '../useS.js';
+import { Field } from './Field.js';
+import { FieldDescription } from './FieldDescription.js';
+import { FieldLabel } from './FieldLabel.js';
+import { FormContext } from './FormContext.js';
+import textareaStyle from './Textarea.module.css';
 
 type BaseProps = Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'style'> &
   ILayoutSizeProps & {
@@ -24,6 +30,7 @@ type BaseProps = Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChan
     labelTooltip?: string;
     embedded?: boolean;
     cursorInitiallyAtEnd?: boolean;
+    uploadable?: boolean;
   };
 
 type ControlledProps = BaseProps & {
@@ -41,8 +48,8 @@ type ObjectProps<TKey extends keyof TState, TState> = BaseProps & {
 };
 
 interface TextareaType {
-  (props: ControlledProps): JSX.Element;
-  <TKey extends keyof TState, TState>(props: ObjectProps<TKey, TState>): JSX.Element;
+  (props: ControlledProps): React.JSX.Element;
+  <TKey extends keyof TState, TState>(props: ObjectProps<TKey, TState>): React.JSX.Element;
 }
 
 export const Textarea: TextareaType = observer(function Textarea({
@@ -56,25 +63,29 @@ export const Textarea: TextareaType = observer(function Textarea({
   labelTooltip,
   embedded,
   cursorInitiallyAtEnd,
+  uploadable,
+  onKeyDown,
   onChange = () => {},
   ...rest
 }: ControlledProps | ObjectProps<any, any>) {
+  const translate = useTranslate();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const layoutProps = getLayoutProps(rest);
   rest = filterLayoutFakeProps(rest);
   const styles = useS(textareaStyle);
   const context = useContext(FormContext);
+  const handleKeyDown = useCombinedHandler(onKeyDown, context?.keyDown);
 
   const handleChange = useCallback(
-    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    (value: string) => {
       if (state) {
-        state[name] = event.target.value;
+        state[name] = value;
       }
       if (onChange) {
-        onChange(event.target.value, name);
+        onChange(value, name);
       }
       if (context) {
-        context.change(event.target.value, name);
+        context.change(value, name);
       }
     },
     [state, name, onChange],
@@ -102,9 +113,35 @@ export const Textarea: TextareaType = observer(function Textarea({
         value={value ?? ''}
         name={name}
         data-embedded={embedded}
-        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onChange={event => handleChange(event.target.value)}
       />
       {description && <FieldDescription>{description}</FieldDescription>}
+      {uploadable && (
+        <UploadArea
+          className={s(styles, { uploadButton: true })}
+          disabled={rest.disabled || rest.readOnly}
+          reset
+          onChange={async event => {
+            const file = event.target.files?.[0];
+
+            if (!file) {
+              throw new Error('File is not found');
+            }
+
+            const process = getTextFileReadingProcess(file);
+            const value = await process.promise;
+
+            if (value) {
+              handleChange(value);
+            }
+          }}
+        >
+          <Button tag="div" disabled={rest.disabled || rest.readOnly} mod={['outlined']}>
+            {translate('ui_file')}
+          </Button>
+        </UploadArea>
+      )}
     </Field>
   );
 });

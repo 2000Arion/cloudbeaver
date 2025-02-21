@@ -37,9 +37,13 @@ export class ResourceManagerScriptsSettingsService extends Dependency {
     this.settingsManagerService.registerSettings(this.settings, () => [
       // {
       //   group: RESOURCE_MANAGER_SETTINGS_GROUP,
-      //   key: 'disabled',
+      //   key: 'plugin.resource-manager-scripts.disabled',
+      //   access: {
+      //     scope: ['server'],
+      //   },
       //   type: ESettingsValueType.Checkbox,
-      //   name: 'Disable resource manager scripts',
+      //   name: 'plugin_resource_manager_scripts_disable',
+      //   description: 'plugin_resource_manager_scripts_disable_description',
       // },
     ]);
   }

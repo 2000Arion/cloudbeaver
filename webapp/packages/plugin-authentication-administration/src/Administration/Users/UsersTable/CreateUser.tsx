@@ -10,9 +10,9 @@ import { observer } from 'mobx-react-lite';
 import { Container, Group, GroupTitle, Loader, s, Translate, useS, useTranslate } from '@cloudbeaver/core-blocks';
 import type { IFormState } from '@cloudbeaver/core-ui';
 
-import { AdministrationUserForm } from '../UserForm/AdministrationUserForm';
-import type { IUserFormState } from '../UserForm/AdministrationUserFormService';
-import style from './CreateUser.m.css';
+import { AdministrationUserForm } from '../UserForm/AdministrationUserForm.js';
+import type { IUserFormState } from '../UserForm/AdministrationUserFormService.js';
+import style from './CreateUser.module.css';
 
 interface Props {
   state: IFormState<IUserFormState>;

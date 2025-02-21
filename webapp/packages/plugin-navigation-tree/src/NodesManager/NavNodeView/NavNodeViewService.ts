@@ -9,9 +9,8 @@ import { untracked } from 'mobx';
 
 import { injectable } from '@cloudbeaver/core-di';
 import { NotificationService } from '@cloudbeaver/core-events';
-import { NavTreeResource } from '@cloudbeaver/core-navigation-tree';
 
-import type { INavNodeFolderTransform, NavNodeFolderTransformFn, NavNodeTransformView } from './IFolderTransform';
+import type { INavNodeFolderTransform, NavNodeFolderTransformFn, NavNodeTransformView } from './IFolderTransform.js';
 
 export interface INodeDuplicateList {
   nodes: string[];
@@ -46,7 +45,7 @@ export class NavNodeViewService {
   private readonly transformers: INavNodeFolderTransform[];
   private readonly duplicationNotify: Set<string>;
 
-  constructor(private readonly navTreeResource: NavTreeResource, private readonly notificationService: NotificationService) {
+  constructor(private readonly notificationService: NotificationService) {
     this.transformers = [];
     this.duplicationNotify = new Set();
 

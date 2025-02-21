@@ -9,14 +9,14 @@ import { observer } from 'mobx-react-lite';
 import { useContext } from 'react';
 
 import { getComputed, s, useS } from '@cloudbeaver/core-blocks';
+import type { RenderCellProps } from '@cloudbeaver/plugin-data-grid';
 import { type IResultSetRowKey, isResultSetContentValue } from '@cloudbeaver/plugin-data-viewer';
-import type { RenderCellProps } from '@cloudbeaver/plugin-react-data-grid';
 
-import { EditingContext } from '../../../Editing/EditingContext';
-import { CellContext } from '../../CellRenderer/CellContext';
-import { DataGridContext } from '../../DataGridContext';
-import { TableDataContext } from '../../TableDataContext';
-import style from './BlobFormatter.m.css';
+import { EditingContext } from '../../../Editing/EditingContext.js';
+import { CellContext } from '../../CellRenderer/CellContext.js';
+import { DataGridContext } from '../../DataGridContext.js';
+import { TableDataContext } from '../../TableDataContext.js';
+import style from './BlobFormatter.module.css';
 
 export const BlobFormatter = observer<RenderCellProps<IResultSetRowKey>>(function BlobFormatter({ column, row }) {
   const context = useContext(DataGridContext);
@@ -36,8 +36,6 @@ export const BlobFormatter = observer<RenderCellProps<IResultSetRowKey>>(functio
   const displayString = getComputed(() => formatter.getDisplayString(cell));
 
   const nullValue = isResultSetContentValue(rawValue) ? rawValue.text === 'null' : rawValue === null;
-  const disabled = !column.editable || editingContext.readonly || formatter.isReadOnly(cell);
-  const readonly = tableDataContext.isCellReadonly(cell);
 
   return (
     <span className={s(styles, { blobFormatter: true, nullValue })} title={displayString}>

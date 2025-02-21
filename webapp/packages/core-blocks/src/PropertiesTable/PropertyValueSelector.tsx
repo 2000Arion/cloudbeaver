@@ -7,12 +7,12 @@
  */
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useRef } from 'react';
-import { Menu, MenuButton, MenuItem, useMenuState } from 'reakit/Menu';
+import { Menu, MenuButton, MenuItem, useMenuState } from 'reakit';
 
-import { BaseDropdownStyles } from '..';
-import { s } from '../s';
-import { useS } from '../useS';
-import classes from './PropertyValueSelector.m.css';
+import { BaseDropdownStyles } from '../index.js';
+import { s } from '../s.js';
+import { useS } from '../useS.js';
+import classes from './PropertyValueSelector.module.css';
 
 interface Props {
   propertyName?: string;
